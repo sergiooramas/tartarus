@@ -43,6 +43,26 @@ def get_configuration(suffix, meta_suffix='bow', extra_params=''):
     add_extra_params(nparams, extra_params)
     params['class_w2v'] = copy.deepcopy(nparams)
 
+    #Class experiment LSTM w2v
+    nparams = copy.deepcopy(models.params_82)
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 300
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = 10
+    nparams["cnn"]["sequence_length"] = 500
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MSD-AG'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #w2v
+    add_extra_params(nparams, extra_params)
+    params['class_lstm'] = copy.deepcopy(nparams)
+
     #Class experiment bow
     nparams = copy.deepcopy(models.params_6)
     nparams["dataset"]["fact"] = 'class'
@@ -126,16 +146,33 @@ def get_configuration(suffix, meta_suffix='bow', extra_params=''):
     nparams["cnn"]["architecture"] = '5'
     nparams["dataset"]["npatches"] = 1
     nparams["dataset"]["nsamples"] = 'all'
-    nparams["dataset"]["dataset"] = 'MSD-AG-S'
+    nparams["dataset"]["dataset"] = 'MSD'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = True
     nparams["dataset"]["with_metadata"] = False
     nparams["dataset"]["only_metadata"] = False
     nparams["dataset"]["configuration"] = suffix
-    nparams["dataset"]["patches-folder"] = '/patches_MSD-A_15/'
     nparams["dataset"]["meta-suffix"] = ""
     add_extra_params(nparams, extra_params)
     params['audio'] = copy.deepcopy(nparams)
+
+    #Multimodal experiment bow
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["fact"] = 'als'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 200
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '6'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MSD-AG-S'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    add_extra_params(nparams, extra_params)
+    params['fact_multi'] = copy.deepcopy(nparams)
 
     '''
     #Multimodal experiment
@@ -209,3 +246,6 @@ if __name__ == '__main__':
     #run(params,0)
     #qsub -o __class_w2v_512f -l h=node06 -v s="class_w2v",m="w2v",p="'cnn.num_filters=512&cnn.filter_sizes=(1,2,3)'" run.sub
     #qsub -o __class_bow -l h=node06 -v s="class_bow",m="bow-bi10k" run.sub
+    #qsub -o __fact_audio -v s="audio" run.sub
+    #qsub -o __fact_multi_G-hs-10k -v s="audio" -v s="fact_multi",m="G-hs-10k-babelfy" run.sub
+    #qsub -o __fact_multi_model_434 -v s="audio" -v s="fact_multi",m="model_434_pred" run.sub

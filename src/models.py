@@ -559,7 +559,9 @@ def get_model_82(params):
     model.add(Activation(params['final_activation']))
     logging.debug("Output CNN: %s" % str(model.output_shape))
 
-    model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
+    if params['final_activation'] == 'linear':
+        model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
+
     return model
 
 # Dileman arch
@@ -722,23 +724,29 @@ def get_model_9(params):
 
 def get_model_10(params):
 
-    max_features = 50001
-    maxlen = 500
-    vocab_dim = 100 # dimensionality of your word vectors
+    #max_features = 50001
+    #maxlen = 500
+    #vocab_dim = 100 # dimensionality of your word vectors
 
-    embedding_weights = np.load("../data/datasets/train_data/embedding_weights_w2v-bow2_MSDA.npy")
-    print "models"
-    print embedding_weights.shape
+    embedding_weights = pickle.load(open("../data/datasets/train_data/embedding_weights_w2v_MSD-AG.pk","rb"))
     model = Sequential()
-    model.add(Embedding(input_dim=max_features, output_dim=vocab_dim, input_length=maxlen, mask_zero=True, weights=[embedding_weights]))
+    model.add(Embedding(len(embedding_weights[0]), params['embedding_dim'], input_length=params['sequence_length'],
+                            weights=embedding_weights))
+    #model.add(Embedding(input_dim=max_features, output_dim=vocab_dim, input_length=maxlen, mask_zero=True, weights=[embedding_weights]))
     logging.debug("Input Embedding: %s" % str(model.input_shape))
     logging.debug("Output Embedding: %s" % str(model.output_shape))
     model.add(Bidirectional(LSTM(200)))
     logging.debug("Output LSTM: %s" % str(model.output_shape))
-    model.add(Dropout(0.5))
-    model.add(Dense(output_dim=params["n_out"], activation='linear'))
-    model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
-    # metadata
+    model.add(Dropout(params['dropout_prob'][0], input_shape=(params['sequence_length'], params['embedding_dim'])))
+    model.add(Dense(params['hidden_dims']))
+    model.add(Dropout(params['dropout_prob'][1]))
+    model.add(Activation('relu'))
+    model.add(Dense(output_dim=params["n_out"], init="uniform"))
+    model.add(Activation(params['final_activation']))
+    logging.debug("Output CNN: %s" % str(model.output_shape))
+
+    if params['final_activation'] == 'linear':
+        model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
 
     return model
 

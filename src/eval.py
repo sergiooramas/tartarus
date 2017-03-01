@@ -173,7 +173,7 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index):
         else:
             #sim_matrix = user_factors.dot(normalize(np.nan_to_num(factors.T),copy=False))
             #sim_matrix = normalize(np.nan_to_num(factors)).dot(user_factors.T)
-            predicted_matrix = normalize(factors).dot(user_factors.T).T
+            predicted_matrix = normalize(np.nan_to_num(factors)).dot(user_factors.T).T
         predicted_matrix_roc = predicted_matrix.T
     print 'Computed similarity matrix'
 

@@ -109,6 +109,8 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
     if with_metadata:
         if 'w2v' in metadata_source:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
+        elif 'model' in metadata_source:
+            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
         #index_meta = open(common.DATASETS_DIR+'/train_data/index_train_%s_%s.tsv' % (metadata_source,dataset)).read().splitlines()
@@ -234,8 +236,8 @@ def load_data_hf5(params,val_percent, test_percent):
     Y_test = HDF5Matrix(hdf5_file, 'targets', start=N_train+N_val, end=N)
     return X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train
 
-def load_data_hf5_memory(params,val_percent, test_percent):
-    hdf5_file = common.PATCHES_DIR+"/patches_%s_%s.hdf5" % (params['dataset']['dataset'],params['dataset']['window'])
+def load_data_hf5_memory(params,val_percent, test_percent, X_meta = None):
+    hdf5_file = common.PATCHES_DIR+"/patches_%s_%sx%s_norm.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
     N = f["targets"].shape[0]
     train_percent = 1 - val_percent - test_percent
@@ -245,14 +247,20 @@ def load_data_hf5_memory(params,val_percent, test_percent):
     Y_val = f['targets'][N_train:N_train+N_val]
     X_test = f['features'][N_train+N_val:N]
     Y_test = f['targets'][N_train+N_val:N]
+    if X_meta != None:
+        X_val = [X_val,X_meta[N_train:N_train+N_val]]
+        X_test = [X_test,X_meta[N_train+N_val:N]]
     return X_val, Y_val, X_test, Y_test, N_train
 
-def batch_block_generator(params, y_path, N_train):
-    hdf5_file = common.PATCHES_DIR+"/patches_%s_%s.hdf5" % (params['dataset']['dataset'],params['dataset']['window'])
+def batch_block_generator(params, y_path, N_train, X_meta = None):
+    hdf5_file = common.PATCHES_DIR+"/patches_%s_%sx%s_norm.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
     block_step = 10000
     batch_size = 32
     randomize = True
+    with_meta = False
+    if X_meta != None:
+        with_meta = True
     while 1:
         for i in range(0,N_train,block_step):
             x_block = f['features'][i:min(N_train,i+block_step)]
@@ -267,7 +275,8 @@ def batch_block_generator(params, y_path, N_train):
                     items_in_batch = items_list[j:j+batch_size]
                     x_batch = x_block[items_in_batch]
                     y_batch = y_block[items_in_batch]
-
+                    if with_meta:
+                        x_batch = [x_batch,X_meta[items_in_batch]]
                     yield (x_batch, y_batch)
 
 def process(params,with_predict=True,with_eval=True):
@@ -279,12 +288,17 @@ def process(params,with_predict=True,with_eval=True):
     metadata_source = params['dataset']['meta-suffix']
     if with_metadata:
         if 'w2v' in metadata_source:
-            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
-            params['cnn']['n_metafeatures'] = len(all_X_meta[0])
+            X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
+            params['cnn']['n_metafeatures'] = len(X_meta[0])
+        elif 'model' in metadata_source:
+            X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
+            params['cnn']['n_metafeatures'] = len(X_meta[0])
         else:
-            all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset']))
-            params['cnn']['n_metafeatures'] = all_X_meta.shape[1]
-        print(all_X_meta.shape)
+            X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset'])).todense()
+            params['cnn']['n_metafeatures'] = X_meta.shape[1]
+        print(X_meta.shape)
+    else:
+        X_meta = None
 
     config = Config(params)
     model_dir = os.path.join(common.MODELS_DIR, config.model_id)
@@ -314,7 +328,7 @@ def process(params,with_predict=True,with_eval=True):
                       config.training_params["test"], config.dataset_settings["nsamples"], with_metadata, only_metadata, metadata_source)
     else:
         if with_generator:
-            X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"])
+            X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],X_meta)
         else:
             X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train = load_data_hf5(params,config.training_params["validation"],config.training_params["test"])
 
@@ -332,10 +346,9 @@ def process(params,with_predict=True,with_eval=True):
                   callbacks=[early_stopping])
     else:
         if with_generator:
-            epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train),
+            epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train,X_meta),
                         samples_per_epoch = N_train-(N_train % config.training_params["n_minibatch"]),
                         nb_epoch = config.training_params["n_epochs"],
-                        show_accuracy = True,
                         verbose=2,
                         validation_data = (X_val, Y_val),
                         callbacks=[early_stopping])
