@@ -20,11 +20,18 @@ def scale(X, scaler=None, max_N=MAX_N_SCALER):
     return X, scaler
 
 
-DATASET_NAME = "MSD-AG-S"
+DATASET_NAME = "MSD"
 WINDOW = 15
+N_PATCHES = 1
 
-hdf5_file = common.PATCHES_DIR+"/patches_%s_%s.hdf5" % (DATASET_NAME,WINDOW)
-f = h5py.File(hdf5_file,"r+")
+hdf5_file = common.PATCHES_DIR+"/patches_%s_%sx%s.hdf5" % (DATASET_NAME,N_PATCHES,WINDOW)
+hdf5_newfile = common.PATCHES_DIR+"/patches_%s_%sx%s_norm.hdf5" % (DATASET_NAME,N_PATCHES,WINDOW)
+print hdf5_file
+f = h5py.File(hdf5_file,"r")
+fw = h5py.File(hdf5_newfile,"w")
+x_dset = fw.create_dataset("features", f['features'].shape, dtype='f')
+y_dset = fw.create_dataset("targets", f['targets'].shape, dtype='f')
+i_dset = fw.create_dataset("index", f['index'].shape, dtype='S18')
 block_step = 10000
 size = f['targets'].shape[0]
 scaler = None
@@ -32,7 +39,9 @@ for i in range(0,size,block_step):
     x_block = f['features'][i:min(size,i+block_step)]
     x_norm, scaler = scale(x_block,scaler)
     print i
-    f['features'][i:min(size,i+block_step)] = x_norm
-
-scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%s.pk' % (DATASET_NAME,WINDOW)
+    fw['features'][i:min(size,i+block_step)] = x_norm
+    fw['targets'][i:min(size,i+block_step)] = f['targets'][i:min(size,i+block_step)]
+    fw['index'][i:min(size,i+block_step)] = f['index'][i:min(size,i+block_step)]
+    
+scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_PATCHES,WINDOW)
 pickle.dump(scaler,open(scaler_file,'wb'))
