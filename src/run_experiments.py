@@ -146,7 +146,7 @@ def get_configuration(suffix, meta_suffix='bow', extra_params=''):
     nparams["cnn"]["architecture"] = '5'
     nparams["dataset"]["npatches"] = 1
     nparams["dataset"]["nsamples"] = 'all'
-    nparams["dataset"]["dataset"] = 'MSD'
+    nparams["dataset"]["dataset"] = 'MSD-AG-S'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = True
     nparams["dataset"]["with_metadata"] = False

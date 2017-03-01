@@ -113,48 +113,10 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
-        #index_meta = open(common.DATASETS_DIR+'/train_data/index_train_%s_%s.tsv' % (metadata_source,dataset)).read().splitlines()
-        #all_Y_in = []
-        #for i,song_id in enumerate(index_meta):
-        #    index = index_factors.index(song_id)
-        #    all_Y_in.append(all_Y[index,:])
-        #all_Y = np.asarray(all_Y_in)
-        """
-        all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
-        index_meta = open(common.DATASETS_DIR+'/train_data/index_train_%s_%s.tsv' % (metadata_source,dataset)).read().splitlines()
-        index_meta_set = set(index_meta)
-        index_X = open(common.DATASETS_DIR+'/train_data/index_train_'+X_path+'.tsv').read().splitlines()
-        all_X_in = []
-        all_X_in_meta = []
-        all_Y_in = []
-        index_X_in = []
-        for i,song_id in enumerate(index_X):
-            if song_id in index_meta_set:
-                index = index_meta.index(song_id)
-                if not only_metadata:
-                    all_X_in.append(all_X[i,:,:,:])
-                all_X_in_meta.append(all_X_meta[index,:])
-                all_Y_in.append(all_Y[i,:])
-                index_X_in.append(song_id)
-        all_X = np.asarray(all_X_in)
-        all_Y = np.asarray(all_Y_in)
-        all_X_in_meta = np.asarray(all_X_in_meta)
-        """                
-        #all_X = np.asarray(all_X_meta)
-        all_X_in_meta = all_X = all_X_meta
-        #all_Y = np.asarray(all_Y)
-        #all_X_in_meta = np.asarray(all_X_meta)
-        print(all_X_in_meta.shape)
-        #solo para crear falso rovi out BORRAR!!!!!!
-        #np.save(common.DATASETS_DIR+'/train_data/X_train_%sm_3x15.npy' % dataset,all_X_in)
-        #np.save(common.DATASETS_DIR+'/train_data/Y_train_mood_7927_%sm_3x15.npy' % dataset,all_X_in_meta)
-        #fw=open(common.DATASETS_DIR+'/train_data/index_train_%sm_3x15.npy' % dataset,'w')
-        #fw.write("\n".join(index_X_in))
-        #fw.close()
 
-        #print(all_X_in_meta.shape)
-        #probar para no metadata en el modelo multimodal BORRAR!!!!!
-        #all_X_in_meta = np.zeros(all_X_in_meta.shape)
+        all_X_in_meta = all_X = all_X_meta
+        print(all_X_in_meta.shape)
+
     print(all_X.shape)
     print(all_Y.shape)
     if n_samples != 'all':
@@ -163,7 +125,7 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
         all_Y = all_Y[:n_samples]
         if with_metadata:
             all_X_in_meta = all_X_in_meta[:n_samples]
-    #all_Y = minmax_normalize(all_Y)
+
     if params['training']['normalize_y'] == True:
         normalize(all_Y,copy=False)
     N = all_Y.shape[0]
@@ -415,7 +377,7 @@ def process(params,with_predict=True,with_eval=True):
         trained_models = pd.read_csv(common.DEFAULT_TRAINED_MODELS_FILE, sep='\t')
         model_config = trained_models[trained_models["model_id"] == trained_model["model_id"]]
         model_config = model_config.to_dict(orient="list")
-        testset = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % (config.dataset_settings["dataset"])).read().splitlines()
+        testset = open(common.DATASETS_DIR+'/items_index_test_spectro_%s.tsv' % (config.dataset_settings["dataset"])).read().splitlines()
         #if with_metadata:
         #    testset = open(common.DATASETS_DIR+'/train_data/index_test_%s_%s.tsv' % (metadata_source,config.dataset_settings["dataset"])).read().splitlines()
         #else:

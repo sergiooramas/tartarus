@@ -20,7 +20,7 @@ def scale(X, scaler=None, max_N=MAX_N_SCALER):
     return X, scaler
 
 
-DATASET_NAME = "MSD"
+DATASET_NAME = "MSD-AG-S"
 WINDOW = 15
 N_PATCHES = 1
 

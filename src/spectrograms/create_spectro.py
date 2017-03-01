@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, '../')
 import common
 from configurations import config_spectro
+import signal
 
 """
 spectrograms.py: computes spectrograms.
@@ -28,6 +29,9 @@ Step 1/5 of the pipeline.
 path2id = dict()
 config = dict()
 
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")
+
 def compute_spec(audio_file,spectro_file):
 	# Get actual audio
 	audio, sr = librosa.load(audio_file, sr=config['resample_sr'])
@@ -38,7 +42,6 @@ def compute_spec(audio_file,spectro_file):
 		spec = librosa.feature.melspectrogram(y=audio, sr=sr, hop_length=config['hop'],n_fft=config['n_fft'],n_mels=config['n_mels'])
 	elif config['spectrogram_type']=='stft':
 		spec = librosa.stft(y=audio,n_fft=config['n_fft'])
-
 	# Write results:
 	with open(spectro_file, "w") as f:
 		pickle.dump(spec, f, protocol=-1) # spec shape: MxN.
@@ -48,7 +51,10 @@ def do_process(id, audio_file, spectro_file):
 		if config['compute_spectro']:
 			if not os.path.exists(spectro_file[:spectro_file.rfind('/')+1]):
 				os.makedirs(spectro_file[:spectro_file.rfind('/')+1])
-			compute_spec(audio_file,spectro_file)
+			if not os.path.isfile(spectro_file): 
+				signal.signal(signal.SIGALRM, signal_handler)
+				signal.alarm(10)
+				compute_spec(audio_file,spectro_file)
 			fw = open(common.SPECTRO_PATH+config['spectro_folder']+"index.tsv","a")
 			fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file[len(common.AUDIO_PATH):]))
 			fw.close()
@@ -74,17 +80,18 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 		description='Create spectrograms',
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-	parser.add_argument('configuration', default="MSD", help='Id of the configuration dictionary')
+	parser.add_argument('configuration', default="magna", help='Id of the configuration dictionary')
 	args = parser.parse_args()
 	config = config_spectro[args.configuration]
 
 	# set spectrograms folder
 	if config['compute_spectro']:
-		config['spectro_folder'] = "spectro_%s_%s_%s/" % (config['spectrograms_name'],config['spectrogram_type'],config['spectrograms_code_version'])
+		config['spectro_folder'] = "spectro_%s_%s/" % (config['spectrograms_name'],config['spectrogram_type'])
+		print config['spectro_folder']
 		if not os.path.exists(common.SPECTRO_PATH+config['spectro_folder']):
 			os.makedirs(common.SPECTRO_PATH+config['spectro_folder'])
-		else:
-			sys.exit("EXIT: already exists a folder with this name!\nIf you need to compute those again, remove folder.")
+		#else:
+		#	sys.exit("EXIT: already exists a folder with this name!\nIf you need to compute those again, remove folder.")
 
 	# create empty spectrograms index
 	fw = open(common.SPECTRO_PATH+config['spectro_folder']+"index.tsv","w")

@@ -149,7 +149,7 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, rnd_se
     # Get all patches into a numpy array
 
     try:
-        patches = get_patches(mel_spec, n_frames, n_frames / 2)
+        patches = get_patches(mel_spec, n_frames, int(n_frames / 2))
         patches = patches.copy()  # Avoid memory overlap
         patches = patches.reshape(-1, 1, n_frames, patches.shape[-1])
 
@@ -317,7 +317,10 @@ def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file=
         if on_trainset:
             dataset_tsv = common.DATASETS_DIR+'/items_index_train_%s.tsv' % model_settings['dataset']
         else:
-            dataset_tsv = common.DATASETS_DIR+'/items_index_test_%s.tsv' % model_settings['dataset']
+            if model_settings['only_metadata']:
+                dataset_tsv = common.DATASETS_DIR+'/items_index_test_%s.tsv' % model_settings['dataset']
+            else:
+                dataset_tsv = common.DATASETS_DIR+'/items_index_test_spectro_%s.tsv' % model_settings['dataset']
     else:
         dataset_tsv = common.DATASETS_DIR+'/%s' % test_file
 

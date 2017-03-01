@@ -141,22 +141,24 @@ def do_process(i,predicted_row,actual_row,ks,p,ndcg,adiv):
 def evaluate(model_id,model_settings,str_config,factors,factors_index):  
     global test_matrix
     global sim_matrix 
+    N_users = 10000
 
     print factors.shape
 
     if model_settings['fact'] == 'class':
         actual_matrix = np.load(common.DATASETS_DIR+'/item_factors_test_class_300_%s.npy' % (model_settings['dataset']))
         good_classes = np.nonzero(actual_matrix.sum(0))[0]
-        print len(good_classes)
         actual_matrix = actual_matrix[:,good_classes]
         actual_matrix_roc = actual_matrix
     else:
-        user_factors = np.load(common.DATASETS_DIR+'/user_factors_%s_%s_%s.npy' % (model_settings['fact'],model_settings['dim'],model_settings['dataset']))[:1000,:]
-        actual_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_test_%s.npz' % model_settings['dataset'])[:,:1000].toarray().T
+        user_factors = np.load(common.DATASETS_DIR+'/user_factors_%s_%s_%s.npy' % (model_settings['fact'],model_settings['dim'],model_settings['dataset']))[:N_users,:]
+        if model_settings['only_metadata']:
+            actual_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_test_%s.npz' % model_settings['dataset'])[:,:N_users].toarray().T
+        else:
+            actual_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_test_spectro_%s.npz' % model_settings['dataset'])[:,:N_users].toarray().T
         actual_matrix_roc = actual_matrix.copy().T
         actual_matrix_roc[np.where(actual_matrix_roc > 0)] = 1
         good_classes = np.nonzero(actual_matrix_roc.sum(0))[0]
-        print len(good_classes)
         actual_matrix_roc = actual_matrix_roc[:,good_classes]
 
     print actual_matrix.shape
@@ -174,7 +176,7 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index):
             #sim_matrix = user_factors.dot(normalize(np.nan_to_num(factors.T),copy=False))
             #sim_matrix = normalize(np.nan_to_num(factors)).dot(user_factors.T)
             predicted_matrix = normalize(np.nan_to_num(factors)).dot(user_factors.T).T
-        predicted_matrix_roc = predicted_matrix.T
+        predicted_matrix_roc = predicted_matrix.T[:,good_classes]
     print 'Computed similarity matrix'
 
 
