@@ -49,11 +49,15 @@ def compute_spec(audio_file,spectro_file):
 def do_process(id, audio_file, spectro_file):
 	try:
 		if config['compute_spectro']:
-			if not os.path.exists(spectro_file[:spectro_file.rfind('/')+1]):
-				os.makedirs(spectro_file[:spectro_file.rfind('/')+1])
+			#print spectro_file[:spectro_file.rfind('/')+1]
+			try:
+				if not os.path.exists(spectro_file[:spectro_file.rfind('/')+1]):
+					os.makedirs(spectro_file[:spectro_file.rfind('/')+1])
+			except:
+				pass
 			if not os.path.isfile(spectro_file): 
 				signal.signal(signal.SIGALRM, signal_handler)
-				signal.alarm(10)
+				signal.alarm(50)
 				compute_spec(audio_file,spectro_file)
 			fw = open(common.SPECTRO_PATH+config['spectro_folder']+"index.tsv","a")
 			fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file[len(common.AUDIO_PATH):]))
@@ -68,9 +72,9 @@ def do_process(id, audio_file, spectro_file):
 		ferrors = open(common.SPECTRO_PATH+config['spectro_folder']+"errors.txt","a")
 		ferrors.write(audio_file+"\n")
 		ferrors.write(str(e))
-		ferrors.close()
-		print 'Error computing spec', audio_file
-		print str(e)
+	#	ferrors.close()
+	#	print 'Error computing spec', audio_file
+	#	print str(e)
 
 def process_files(files):
 	Parallel(n_jobs=config['num_process'])(delayed(do_process)(id, audio_file, spectro_file)
