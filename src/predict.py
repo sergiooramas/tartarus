@@ -267,7 +267,9 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
                                  trim_coeff, rnd_selection, spectro_folder=spectro_folder)
         if pred != []:
             factors.append(pred)
-            factors_index.append(track_uid)
+        else:
+            factors.append(np.zeros(factors[0].shape))
+        factors_index.append(track_uid)
         if i%1000==0:
             print(i)
     suffix = ''        
