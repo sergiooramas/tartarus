@@ -64,7 +64,7 @@ def mapk(actual, predicted, k=10):
     Parameters
     ----------
     actual : list
-             A list of lists of elements that are to be predicted 
+             A list of lists of elements that are to be predicted
              (order doesn't matter in the lists)
     predicted : list
                 A list of lists of predicted elements
@@ -138,10 +138,10 @@ def do_process(i,predicted_row,actual_row,ks,p,ndcg,adiv):
         ndcg[j][i] += ndcg_at_k(pred,k)
         adiv[j][rank[:k]] = 1
 
-def evaluate(model_id,model_settings,str_config,factors,factors_index):  
+def evaluate(model_id,model_settings,str_config,factors,factors_index):
     global test_matrix
-    global sim_matrix 
-    N_users = 10000
+    global sim_matrix
+    N_users = 1000
 
     print factors.shape
 
@@ -205,7 +205,7 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index):
                            for i in range(0,predicted_matrix.shape[0]))
 
 
-    
+
     fw=open(common.DATA_DIR+'/results/eval_results.txt','a')
     print model_id
     print model_settings['dataset']

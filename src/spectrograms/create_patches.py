@@ -55,7 +55,7 @@ def prepare_trainset(dataset_name):
             spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
             for i in range(0,N_SAMPLES):
                 try:
-                    sample = sample_patch(spec,N_FRAMES)                
+                    sample = sample_patch(spec,N_FRAMES)
                     x_dset[k,:,:,:] = sample.reshape(-1,sample.shape[0],sample.shape[1])
                     y_dset[k,:] = factors[t]
                     i_dset[k] = track_id
@@ -85,7 +85,7 @@ def prepare_testset(dataset_name):
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
     items = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % dataset_name).read().splitlines()
-    test_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_train_%s.npz' % dataset_name)
+    test_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_test_%s.npz' % dataset_name)
     testset = []
     testset_index = []
     for t,track_id in enumerate(items):
@@ -108,5 +108,5 @@ def prepare_testset(dataset_name):
     fw.write("\n".join(testset))
 
 if __name__ == '__main__':
-    prepare_trainset(DATASET_NAME)
+    # prepare_trainset(DATASET_NAME)
     prepare_testset(DATASET_NAME)
