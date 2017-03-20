@@ -12,7 +12,7 @@ SECONDS = 15
 SR = 22050
 HR = 1024
 N_FRAMES = int(SECONDS * SR / float(HR)) # 10 seconds of audio
-N_SAMPLES=1
+N_SAMPLES=3
 N_BINS = 96
 DATASET_NAME='MSD-AG-S'
 SPECTRO_FOLDER='spectro_MSD_cqt'
@@ -41,9 +41,9 @@ def prepare_trainset(dataset_name):
     items = open(common.DATASETS_DIR+'/items_index_train_%s.tsv' % dataset_name).read().splitlines()
     factors = np.load(common.DATASETS_DIR+'/item_factors_%s_%s.npy' % (Y_PATH,dataset_name))
     n_items = len(items) * N_SAMPLES
-    x_dset = f.create_dataset("features", (n_items,1,N_FRAMES,N_BINS), maxshape=(n_items,1,N_FRAMES,N_BINS), dtype='f')
-    y_dset = f.create_dataset("targets", (n_items,factors.shape[1]), maxshape=(n_items,factors.shape[1]), dtype='f')
-    i_dset = f.create_dataset("index", (n_items,), maxshape=(n_items,), dtype='S18')
+    x_dset = f.create_dataset("features", (n_items,1,N_FRAMES,N_BINS), dtype='f')
+    y_dset = f.create_dataset("targets", (n_items,factors.shape[1]), dtype='f')
+    i_dset = f.create_dataset("index", (n_items,), dtype='S18')
     n=0
     k=0
     trainset = []
@@ -69,10 +69,10 @@ def prepare_trainset(dataset_name):
         n+=1
         if n%10000==0:
             print n
-    if len(trainset) < n_items:
-        x_dset.resize((len(trainset),1,N_FRAMES,N_BINS))
-        y_dset.resize((len(trainset),factors.shape[1]))
-        i_dset.resize((len(trainset),))
+    # if len(trainset) < n_items:
+        # x_dset.resize((len(trainset),1,N_FRAMES,N_BINS))
+        # y_dset.resize((len(trainset),factors.shape[1]))
+        # i_dset.resize((len(trainset),))
     print x_dset.shape
     print y_dset.shape
     print i_dset.shape
@@ -108,5 +108,5 @@ def prepare_testset(dataset_name):
     fw.write("\n".join(testset))
 
 if __name__ == '__main__':
-    # prepare_trainset(DATASET_NAME)
-    prepare_testset(DATASET_NAME)
+    prepare_trainset(DATASET_NAME)
+    # prepare_testset(DATASET_NAME)
