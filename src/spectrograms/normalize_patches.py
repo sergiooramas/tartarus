@@ -8,7 +8,7 @@ import common
 
 MAX_N_SCALER = 300000
 FEATS_MEAN = -37.27
-FEATS_VAR = 80.0
+FEATS_STD = 12.75
 
 DATASET_NAME = "MSD-AG-S"
 WINDOW = 15
@@ -28,7 +28,7 @@ block_step = 10000
 size = f['targets'].shape[0]
 for i in range(0, size, block_step):
     x_block = f['features'][i:min(size, i+block_step)]
-    x_norm = (x_block - FEATS_MEAN) / float(FEATS_VAR)
+    x_norm = (x_block - FEATS_MEAN) / float(FEATS_STD)
     print i
     fw['features'][i:min(size,i+block_step)] = x_norm
     fw['targets'][i:min(size,i+block_step)] = f['targets'][i:min(size,i+block_step)]
