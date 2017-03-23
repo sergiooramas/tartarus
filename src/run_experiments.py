@@ -144,7 +144,7 @@ def get_configuration(suffix, meta_suffix='bow', extra_params=''):
     nparams["dataset"]["dim"] = 200
     nparams["training"]["loss_func"] = 'cosine'
     nparams["cnn"]["architecture"] = '5'
-    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["npatches"] = 3
     nparams["dataset"]["nsamples"] = 'all'
     nparams["dataset"]["dataset"] = 'MSD-AG-S'
     nparams["training"]["optimizer"] = 'adam'
@@ -159,7 +159,7 @@ def get_configuration(suffix, meta_suffix='bow', extra_params=''):
     #Multimodal experiment bow
     nparams = copy.deepcopy(models.params_6)
     nparams["dataset"]["fact"] = 'als'
-    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["npatches"] = 3
     nparams["dataset"]["dim"] = 200
     nparams["dataset"]["with_metadata"] = True
     nparams["dataset"]["only_metadata"] = False

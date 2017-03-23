@@ -36,7 +36,7 @@ HR = 1024
 
 class Config(object):
     """Configuration for the training process."""
-    def __init__(self, params, normalize=False, whiten=True):
+    def __init__(self, params, normalize=False, whiten=False):
         self.model_id = common.get_next_model_id()
         self.norm = normalize
         self.whiten = whiten
@@ -82,7 +82,7 @@ def build_model(config):
     t_params = config.training_params
     sgd = SGD(lr=t_params["learning_rate"], decay=t_params["decay"],
               momentum=t_params["momentum"], nesterov=t_params["nesterov"])
-    adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+    adam = Adam(lr=t_params["learning_rate"], beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     optimizer = eval(t_params['optimizer'])
     if t_params['loss_func'] == 'cosine':
         loss_func = eval(t_params['loss_func'])
@@ -294,11 +294,10 @@ def process(params,with_predict=True,with_eval=True):
         else:
             X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train = load_data_hf5(params,config.training_params["validation"],config.training_params["test"])
 
-    trained_model["whiten_scaler"] = common.DATASETS_DIR+'/train_data/scaler_%s.pk' % config.x_path
     #logging.debug(X_train.shape)
     logging.debug("Training...")
     early_stopping = EarlyStopping(monitor='val_loss', patience=4)
-    
+
     if only_metadata:
         epochs = model.fit(X_train, Y_train,
                   batch_size=config.training_params["n_minibatch"],
@@ -319,7 +318,7 @@ def process(params,with_predict=True,with_eval=True):
                       batch_size=config.training_params["n_minibatch"],
                       shuffle='batch',
                       nb_epoch=config.training_params["n_epochs"],
-                      verbose=2, 
+                      verbose=2,
                       validation_data=(X_val, Y_val),
                       callbacks=[early_stopping])
 

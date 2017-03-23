@@ -25,10 +25,10 @@ params_5 = {
     # training params
     'training' : {
         'decay' : 1e-6,
-        'learning_rate' : 0.1,
+        'learning_rate' : 1e-3,
         'momentum' : 0.95,
         'n_epochs' : 100,
-        'n_minibatch' : 32,
+        'n_minibatch' : 64,
         'nesterov' : True,
         'validation' : 0.1,
         'test' : 0.1,
@@ -50,7 +50,7 @@ params_5 = {
         'n_out' : '',
         'n_pool_1' : (4, 1),
         'n_pool_2' : (4, 1),
-        'n_pool_3' : (1, 1),
+        'n_pool_3' : (4, 1),
         'n_pool_4' : (1, 1),
         'n_frames' : '',
         'n_mel' : 96,
@@ -179,10 +179,10 @@ params_6 = {
         'dropout_factor' : 0.5,
         'n_dense' : 2048,
         'n_dense_2' : 2048,
-        'n_filters_1' : 1024,
-        'n_filters_2' : 1024,
-        'n_filters_3' : 2048,
-        'n_filters_4' : 2048,
+        'n_filters_1' : 256,
+        'n_filters_2' : 512,
+        'n_filters_3' : 1024,
+        'n_filters_4' : 1024,
         'n_kernel_1' : (4, 96),
         'n_kernel_2' : (4, 1),
         'n_kernel_3' : (4, 1),
@@ -190,7 +190,7 @@ params_6 = {
         'n_out' : '',
         'n_pool_1' : (4, 1),
         'n_pool_2' : (4, 1),
-        'n_pool_3' : (1, 1),
+        'n_pool_3' : (4, 1),
         'n_pool_4' : (1, 1),
         'n_frames' : '',
         'n_mel' : 96,
@@ -479,7 +479,7 @@ params_82 = {
     'cnn' : {
         'dropout_factor' : 0.5,
         'sequence_length' : 500,
-        'embedding_dim' : 300,          
+        'embedding_dim' : 300,
         'filter_sizes' : (2, 3, 4),
         'num_filters' : 150,
         'dropout_prob' : (0.6, 0.7),
@@ -534,7 +534,7 @@ def get_model_82(params):
         #x = flatten(x)
         #logging.debug("Flatten: %s" % str(flatten.output_shape))
         convs.append(x)
-        
+
     if len(params['filter_sizes'])>1:
         merge = Merge(mode='concat')
         out = merge(convs)
