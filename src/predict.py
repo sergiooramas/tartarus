@@ -154,7 +154,7 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, rnd_se
         patches = patches.reshape(-1, 1, n_frames, patches.shape[-1])
 
         if model_config["whiten"][0]:
-            scaler_file = model_config["whiten_scaler"][0]            
+            scaler_file = model_config["whiten_scaler"][0]
             scaler = joblib.load(common.TRAINDATA_DIR+'/'+scaler_file[scaler_file.rfind('/')+1:])
             patches, _ = common.preprocess_data(patches, scaler)
         if rnd_selection:
@@ -165,7 +165,10 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, rnd_se
             for i,patch in enumerate(patches):
                 patches_meta[i,:] = metadata[:]
             patches = [patches,patches_meta]
-        # Make predictions           
+        # Make predictions
+
+        # uri hack for normalization
+        patches = (patches - -37.27) / 12.75
         preds = model.predict(patches)
         #imd_f = theano.function([model.input],
         #                model.nodes[-1].get_output(train=False))
@@ -206,7 +209,7 @@ def predict_track_metadata(model, metadata=[]):
     try:
         # Make predictions
         patches_meta = np.zeros((1,metadata.shape[0]))
-        patches_meta[0,:] = metadata[:]            
+        patches_meta[0,:] = metadata[:]
         pred = model.predict(patches_meta)
 
     except Exception,e:
@@ -272,7 +275,7 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
         factors_index.append(track_uid)
         if i%1000==0:
             print(i)
-    suffix = ''        
+    suffix = ''
     if rnd_selection:
         suffix = '_rnd'
     if spectro_folder != '':
@@ -315,7 +318,7 @@ def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file=
     model_config = model_config.to_dict(orient="list")
     model_settings=eval(model_config['dataset_settings'][0])
 
-    if test_file == "":    
+    if test_file == "":
         if on_trainset:
             dataset_tsv = common.DATASETS_DIR+'/items_index_train_%s.tsv' % model_settings['dataset']
         else:
