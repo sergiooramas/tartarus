@@ -25,10 +25,10 @@ params_5 = {
     # training params
     'training' : {
         'decay' : 1e-6,
-        'learning_rate' : 1e-3,
+        'learning_rate' : 1e-4,
         'momentum' : 0.95,
         'n_epochs' : 100,
-        'n_minibatch' : 64,
+        'n_minibatch' : 128,
         'nesterov' : True,
         'validation' : 0.1,
         'test' : 0.1,
@@ -50,8 +50,9 @@ params_5 = {
         'n_out' : '',
         'n_pool_1' : (4, 1),
         'n_pool_2' : (4, 1),
-        'n_pool_3' : (4, 1),
+        'n_pool_3' : (2, 1),
         'n_pool_4' : (1, 1),
+        'n_dense' : 4096,
         'n_frames' : '',
         'n_mel' : 96,
         'architecture' : 2
@@ -130,10 +131,10 @@ def get_model_5(params):
     model.add(Flatten())
     logging.debug("Output Flatten: %s" % str(model.output_shape))
 
-    #model.add(Dense(output_dim=params["n_dense"], init="uniform"))
-    #model.add(Activation("relu"))
-    #model.add(Dropout(params["dropout_factor"]))
-    #logging.debug("Output Dense: %s" % str(model.output_shape))
+    model.add(Dense(output_dim=params["n_dense"], init="glorot_uniform"))
+    model.add(Activation("relu"))
+    model.add(Dropout(params["dropout_factor"]))
+    logging.debug("Output Dense: %s" % str(model.output_shape))
 
     #model.add(Dense(output_dim=params["n_dense"], init="uniform"))
     #model.add(Activation("relu"))
@@ -141,7 +142,7 @@ def get_model_5(params):
     #model.add(Dropout(params["dropout_factor"]))
     #logging.debug("Output Dense: %s" % str(model.output_shape))
 
-    model.add(Dense(output_dim=params["n_out"], init="uniform"))
+    model.add(Dense(output_dim=params["n_out"], init="glorot_uniform"))
     model.add(Activation('linear'))
     logging.debug("Output CNN: %s" % str(model.output_shape))
 
