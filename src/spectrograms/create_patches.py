@@ -1,4 +1,5 @@
-from scipy.sparse import csr_matrix, coo_matrix
+from scipy.sparse import csr_matrix
+from sklearn.preprocessing import StandardScaler
 import pickle
 import numpy as np
 import os
@@ -7,6 +8,7 @@ sys.path.insert(0, '../')
 import common
 import librosa
 import h5py
+from random import shuffle
 
 SECONDS = 15
 SR = 22050
@@ -14,9 +16,22 @@ HR = 1024
 N_FRAMES = int(SECONDS * SR / float(HR)) # 10 seconds of audio
 N_SAMPLES=1
 N_BINS = 96
-DATASET_NAME='MSD-AG-S'
+DATASET_NAME='multi2deT'
 SPECTRO_FOLDER='spectro_MSD_cqt'
-Y_PATH='als_200'
+Y_PATH='class_250'
+MAX_N_SCALER=300000
+
+def scale(X, scaler=None, max_N=MAX_N_SCALER):
+    shape = X.shape
+    X.shape = (shape[0], shape[2] * shape[3])
+    if not scaler:
+        scaler = StandardScaler()
+        N = min([len(X), max_N])
+        scaler.fit(X[:N])
+    X = scaler.transform(X)
+    X.shape = shape
+    return X, scaler
+
 
 def save_sparse_csr(filename,array):
     np.savez(filename,data = array.data ,indices=array.indices,
@@ -33,20 +48,22 @@ def sample_patch(mel_spec, n_frames):
     r_idx = np.random.randint(0, high=mel_spec.shape[0] - n_frames + 1)
     return mel_spec[r_idx:r_idx + n_frames]
 
-def prepare_trainset(dataset_name):
+def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, scaler=None):
     if not os.path.exists(common.PATCHES_DIR):
         os.makedirs(common.PATCHES_DIR)
-    f = h5py.File(common.PATCHES_DIR+'/patches_%s_%sx%s.hdf5' % (dataset_name,N_SAMPLES,SECONDS),'w')
+    f = h5py.File(common.PATCHES_DIR+'/patches_%s_%s_%sx%s.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS),'w')
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
-    items = open(common.DATASETS_DIR+'/items_index_train_%s.tsv' % dataset_name).read().splitlines()
-    factors = np.load(common.DATASETS_DIR+'/item_factors_%s_%s.npy' % (Y_PATH,dataset_name))
+    items = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name, dataset_name)).read().splitlines()
     n_items = len(items) * N_SAMPLES
-    x_dset = f.create_dataset("features", (n_items,1,N_FRAMES,N_BINS), maxshape=(n_items,1,N_FRAMES,N_BINS), dtype='f')
-    y_dset = f.create_dataset("targets", (n_items,factors.shape[1]), maxshape=(n_items,factors.shape[1]), dtype='f')
+    print n_items
+    x_dset = f.create_dataset("features", (n_items,1,N_FRAMES,N_BINS), dtype='f')
     i_dset = f.create_dataset("index", (n_items,), maxshape=(n_items,), dtype='S18')
-    n=0
+    if with_factors:
+        factors = np.load(common.DATASETS_DIR+'/item_factors_%s_%s_%s.npy' % (set_name, Y_PATH,dataset_name))
+        y_dset = f.create_dataset("targets", (n_items,factors.shape[1]), dtype='f')
     k=0
-    trainset = []
+    itemset = []
+    itemset_index = []
     for t,track_id in enumerate(items):
         msd_folder = track_id[2]+"/"+track_id[3]+"/"+track_id[4]+"/"
         file = spec_folder+msd_folder+track_id+".pk"
@@ -57,27 +74,33 @@ def prepare_trainset(dataset_name):
                 try:
                     sample = sample_patch(spec,N_FRAMES)                
                     x_dset[k,:,:,:] = sample.reshape(-1,sample.shape[0],sample.shape[1])
-                    y_dset[k,:] = factors[t]
+                    if with_factors:
+                        y_dset[k,:] = factors[t]
                     i_dset[k] = track_id
-                    trainset.append(track_id)
+                    itemset.append(track_id)
+                    itemset_index.append(t)
                     k+=1
                 except Exception as e:
                     print 'Error',e
                     print file
         except:
             pass
-        n+=1
-        if n%10000==0:
-            print n
-    if len(trainset) < n_items:
-        x_dset.resize((len(trainset),1,N_FRAMES,N_BINS))
-        y_dset.resize((len(trainset),factors.shape[1]))
-        i_dset.resize((len(trainset),))
+        if t%1000==0:
+            print t
+
     print x_dset.shape
-    print y_dset.shape
-    print i_dset.shape
-    fw = open(common.DATASETS_DIR+'/items_index_train_spectro_%s.tsv' % dataset_name, "w")
-    fw.write("\n".join(trainset))
+
+    # Normalize
+    if normalize:
+        print "Normalizing"
+        block_step = 10000
+        for i in range(0,len(itemset),block_step):
+            x_block = f['features'][i:min(len(itemset),i+block_step)]
+            x_norm, scaler = scale(x_block,scaler)
+            f['features'][i:min(len(itemset),i+block_step)] = x_norm
+        scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_SAMPLES,SECONDS)
+        pickle.dump(scaler,open(scaler_file,'wb'))
+    return scaler
 
 def prepare_testset(dataset_name):
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
@@ -85,7 +108,6 @@ def prepare_testset(dataset_name):
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
     items = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % dataset_name).read().splitlines()
-    test_matrix = load_sparse_csr(common.DATASETS_DIR+'/matrix_train_%s.npz' % dataset_name)
     testset = []
     testset_index = []
     for t,track_id in enumerate(items):
@@ -102,11 +124,10 @@ def prepare_testset(dataset_name):
                     print t
         except:
             print "no exist", file
-    good_test_matrix = test_matrix[testset_index]
-    save_sparse_csr(common.DATASETS_DIR+'/matrix_test_spectro_%s.npz' % dataset_name,good_test_matrix)
-    fw = open(common.DATASETS_DIR+'/items_index_test_spectro_%s.tsv' % dataset_name, "w")
-    fw.write("\n".join(testset))
 
 if __name__ == '__main__':
-    prepare_trainset(DATASET_NAME)
-    prepare_testset(DATASET_NAME)
+    scaler = prepare_trainset(DATASET_NAME,"train", with_factors=False)
+    scaler = prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
+    scaler = prepare_trainset(DATASET_NAME,"test",scaler=scaler, with_factors=False)
+    #prepare_testset(DATASET_NAME)
+    
