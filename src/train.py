@@ -84,16 +84,19 @@ def build_model(config):
               momentum=t_params["momentum"], nesterov=t_params["nesterov"])
     adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     optimizer = eval(t_params['optimizer'])
+    metrics = ['mean_squared_error']
+    if config.model_arch["final_activation"] == 'softmax':
+        metrics.append('categorical_accuracy')
     if t_params['loss_func'] == 'cosine':
         loss_func = eval(t_params['loss_func'])
     else:
         loss_func = t_params['loss_func']
-    model.compile(loss=loss_func, optimizer=optimizer,metrics=['mean_squared_error'])
+    model.compile(loss=loss_func, optimizer=optimizer,metrics=metrics)
 
     return model
 
 def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_percent, n_samples, with_metadata=False, only_metadata=False, metadata_source='rovi'):
-    factors = np.load(common.DATASETS_DIR+'/item_factors_'+Y_path+'.npy')
+    factors = np.load(common.DATASETS_DIR+'/item_factors_train_'+Y_path+'.npy') # OJO remove S
     index_factors = open(common.DATASETS_DIR+'/items_index_train_'+dataset+'.tsv').read().splitlines()
     if not only_metadata:
         all_X = np.load(common.DATASETS_DIR+'/train_data/X_train_'+X_path+'.npy')
@@ -109,7 +112,7 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
     if with_metadata:
         if 'w2v' in metadata_source:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
-        elif 'model' in metadata_source:
+        elif 'model' in metadata_source or not params['dataset']['sparse']:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
@@ -136,31 +139,39 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
     logging.debug("Validation data points: %d" % N_val)
     logging.debug("Test data points: %d" % (N - N_train - N_val))
 
-    if not only_metadata:
-        # Slice data
-        X_train = all_X[:N_train]
-        X_val = all_X[N_train:N_train + N_val]
-        X_test = all_X[N_train + N_val:]
-    Y_train = all_Y[:N_train]
-    Y_val = all_Y[N_train:N_train + N_val]
-    Y_test = all_Y[N_train + N_val:]
+    if params['training']["val_from_file"]:
+        Y_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+Y_path+'.npy')
+        Y_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+Y_path+'.npy') #!!! OJO remove S from trainS
+        X_val = np.load(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npy' % (metadata_source,dataset))
+        X_test = np.load(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npy' % (metadata_source,dataset))
+        X_train = all_X
+        Y_train = all_Y
+    else:
+        if not only_metadata:
+            # Slice data
+            X_train = all_X[:N_train]
+            X_val = all_X[N_train:N_train + N_val]
+            X_test = all_X[N_train + N_val:]
+        Y_train = all_Y[:N_train]
+        Y_val = all_Y[N_train:N_train + N_val]
+        Y_test = all_Y[N_train + N_val:]
 
-    if with_metadata:
-        if only_metadata:
-            X_train = all_X_in_meta[:N_train]
-            X_val = all_X_in_meta[N_train:N_train + N_val]
-            X_test = all_X_in_meta[N_train + N_val:]
-        else:
-            X_train = [X_train,all_X_in_meta[:N_train]]
-            X_val = [X_val,all_X_in_meta[N_train:N_train + N_val]]
-            X_test = [X_test,all_X_in_meta[N_train + N_val:]]
+        if with_metadata:
+            if only_metadata:
+                X_train = all_X_in_meta[:N_train]
+                X_val = all_X_in_meta[N_train:N_train + N_val]
+                X_test = all_X_in_meta[N_train + N_val:]
+            else:
+                X_train = [X_train,all_X_in_meta[:N_train]]
+                X_val = [X_val,all_X_in_meta[N_train:N_train + N_val]]
+                X_test = [X_test,all_X_in_meta[N_train + N_val:]]
 
     return X_train, Y_train, X_val, Y_val, X_test, Y_test
 
 def single_file_generator(params, y_path):
     items_index = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
     factors = np.load(common.DATASETS_DIR+'/item_factors_'+y_path+'.npy')
-    f = h5py.File(common.PATCHES_DIR+"/patches_MSD-AG-S_15.hdf5","r")
+    f = h5py.File(common.PATCHES_DIR+"/patches_train_%s_15.hdf5" % params['dataset']['dataset'],"r")
     patches = f["patches"]
     batch_size = params["training"]["n_minibatch"]
     items_list = range(int(len(items_index)*0.8))
@@ -183,7 +194,7 @@ def single_file_generator(params, y_path):
             yield (np.asarray(x), np.asarray(y))
 
 def load_data_hf5(params,val_percent, test_percent):
-    hdf5_file = common.PATCHES_DIR+"/patches_%s_%s.hdf5" % (params['dataset']['dataset'],params['dataset']['window'])
+    hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%s.hdf5" % (params['dataset']['dataset'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
     N = f["targets"].shape[0]
     f.close()
@@ -198,26 +209,53 @@ def load_data_hf5(params,val_percent, test_percent):
     Y_test = HDF5Matrix(hdf5_file, 'targets', start=N_train+N_val, end=N)
     return X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train
 
-def load_data_hf5_memory(params,val_percent, test_percent, X_meta = None):
-    hdf5_file = common.PATCHES_DIR+"/patches_%s_%sx%s_norm.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
-    f = h5py.File(hdf5_file,"r")
-    N = f["targets"].shape[0]
-    train_percent = 1 - val_percent - test_percent
-    N_train = int(train_percent * N)
-    N_val = int(val_percent * N)
-    X_val = f['features'][N_train:N_train+N_val]
-    Y_val = f['targets'][N_train:N_train+N_val]
-    X_test = f['features'][N_train+N_val:N]
-    Y_test = f['targets'][N_train+N_val:N]
+def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta = None, val_from_file = False):
+    if val_from_file:
+        hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
+        f = h5py.File(hdf5_file,"r")
+        N_train = f["index"].shape[0]
+        
+        val_hdf5_file = common.PATCHES_DIR+"/patches_val_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
+        f_val = h5py.File(val_hdf5_file,"r")
+        X_val = f_val['features'][:]
+        #Y_val = f_val['targets'][:]
+        factors_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+y_path+'.npy')
+        index_factors_val = open(common.DATASETS_DIR+'/items_index_val_'+params['dataset']['dataset']+'.tsv').read().splitlines()
+        id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))            
+        index_val = f_val['index'][:]
+        Y_val = np.asarray([id2gt_val[id] for id in index_val])
+
+        test_hdf5_file = common.PATCHES_DIR+"/patches_test_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
+        f_test = h5py.File(test_hdf5_file,"r")
+        X_test = f_test['features'][:]
+        #Y_test = f_test['targets'][:]
+        factors_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+y_path+'.npy')
+        index_factors_test = open(common.DATASETS_DIR+'/items_index_test_'+params['dataset']['dataset']+'.tsv').read().splitlines()
+        id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))            
+        index_test = f_test['index'][:]
+        Y_test = np.asarray([id2gt_test[id] for id in index_test])
+    else:
+        hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
+        f = h5py.File(hdf5_file,"r")
+        N = f["targets"].shape[0]
+        train_percent = 1 - val_percent - test_percent
+        N_train = int(train_percent * N)
+        N_val = int(val_percent * N)
+        X_val = f['features'][N_train:N_train+N_val]
+        index_val = f['index'][N_train:N_train+N_val]
+        Y_val = np.asarray([id2gt[id] for id in index_val])
+        X_test = f['features'][N_train+N_val:N]
+        index_test = f['index'][N_train+N_val:N]
+        Y_test = np.asarray([id2gt[id] for id in index_test])
     if X_meta != None:
         X_val = [X_val,X_meta[N_train:N_train+N_val]]
         X_test = [X_test,X_meta[N_train+N_val:N]]
     return X_val, Y_val, X_test, Y_test, N_train
 
-def batch_block_generator(params, y_path, N_train, X_meta = None):
-    hdf5_file = common.PATCHES_DIR+"/patches_%s_%sx%s_norm.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
+def batch_block_generator(params, y_path, N_train, id2gt, X_meta = None, val_from_file = False):
+    hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
-    block_step = 10000
+    block_step = 50000
     batch_size = 32
     randomize = True
     with_meta = False
@@ -226,7 +264,9 @@ def batch_block_generator(params, y_path, N_train, X_meta = None):
     while 1:
         for i in range(0,N_train,block_step):
             x_block = f['features'][i:min(N_train,i+block_step)]
-            y_block = f['targets'][i:min(N_train,i+block_step)]
+            index_block = f['index'][i:min(N_train,i+block_step)]
+            #y_block = f['targets'][i:min(N_train,i+block_step)]
+            y_block = np.asarray([id2gt[id] for id in index_block])
             if params['training']['normalize_y'] == True:
                 normalize(y_block,copy=False)
             items_list = range(x_block.shape[0])
@@ -252,7 +292,7 @@ def process(params,with_predict=True,with_eval=True):
         if 'w2v' in metadata_source:
             X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
             params['cnn']['n_metafeatures'] = len(X_meta[0])
-        elif 'model' in metadata_source:
+        elif 'model' in metadata_source or not params['dataset']['sparse']:
             X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
             params['cnn']['n_metafeatures'] = len(X_meta[0])
         else:
@@ -288,16 +328,36 @@ def process(params,with_predict=True,with_eval=True):
         X_train, Y_train, X_val, Y_val, X_test, Y_test = \
             load_data_preprocesed(params, config.x_path, config.y_path, params['dataset']['dataset'], config.training_params["validation"],
                       config.training_params["test"], config.dataset_settings["nsamples"], with_metadata, only_metadata, metadata_source)
+        if 'meta-suffix2' in params['dataset']:
+            X_train2, Y_train2, X_val2, Y_val2, X_test2, Y_test2 = \
+                load_data_preprocesed(params, config.x_path, config.y_path, params['dataset']['dataset'], config.training_params["validation"],
+                          config.training_params["test"], config.dataset_settings["nsamples"], with_metadata, only_metadata, params['dataset']['meta-suffix2'])
+            X_train = [X_train,X_train2]
+            X_val = [X_val,X_val2]
+            X_test = [X_test,X_test2]
+            #Y_train = [Y_train,Y_train2]
+            #Y_val = [Y_val,Y_val2]
+            #Y_test = [Y_test,Y_test2]
+            print("X_train bi", len(X_train))
     else:
         if with_generator:
-            X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],X_meta)
+            id2gt = dict()
+            factors = np.load(common.DATASETS_DIR+'/item_factors_train_'+config.y_path+'.npy')
+            index_factors = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
+            id2gt = dict((index,factor) for (index,factor) in zip(index_factors,factors))            
+            X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],config.y_path,id2gt,X_meta,config.training_params["val_from_file"])
         else:
             X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train = load_data_hf5(params,config.training_params["validation"],config.training_params["test"])
 
     trained_model["whiten_scaler"] = common.DATASETS_DIR+'/train_data/scaler_%s.pk' % config.x_path
     #logging.debug(X_train.shape)
     logging.debug("Training...")
-    early_stopping = EarlyStopping(monitor='val_loss', patience=4)
+
+    if config.model_arch["final_activation"] == 'softmax':
+        monitor_metric = 'val_categorical_accuracy'
+    else:
+        monitor_metric = 'val_loss'
+    early_stopping = EarlyStopping(monitor=monitor_metric, patience=4)
     
     if only_metadata:
         epochs = model.fit(X_train, Y_train,
@@ -308,7 +368,7 @@ def process(params,with_predict=True,with_eval=True):
                   callbacks=[early_stopping])
     else:
         if with_generator:
-            epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train,X_meta),
+            epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train,id2gt,X_meta,config.training_params["val_from_file"]),
                         samples_per_epoch = N_train-(N_train % config.training_params["n_minibatch"]),
                         nb_epoch = config.training_params["n_epochs"],
                         verbose=2,
@@ -324,6 +384,9 @@ def process(params,with_predict=True,with_eval=True):
                       callbacks=[early_stopping])
 
     model.save_weights(os.path.join(model_dir, config.model_id + common.WEIGHTS_EXT))
+    logging.debug("Saving trained model %s in %s..." %
+                  (trained_model["model_id"], common.DEFAULT_TRAINED_MODELS_FILE))
+    common.save_trained_model(common.DEFAULT_TRAINED_MODELS_FILE, trained_model)
 
     logging.debug("Evaluating...")
     #convout1_f = theano.function([model.get_input(train=False)], xout.get_output(train=False))
@@ -334,6 +397,8 @@ def process(params,with_predict=True,with_eval=True):
     #np.save('results/last_layer_%s' % trained_model["model_id"],C1)
     #print(C1)
     # Step prediction
+
+
     preds=model.predict(X_test)
     print(preds.shape)
     if params["dataset"]["fact"] == 'class':
@@ -356,9 +421,6 @@ def process(params,with_predict=True,with_eval=True):
     trained_model["loss_score"] = score[0]
     trained_model["mse"] = score[1]
     trained_model["r2"] = r2
-    logging.debug("Saving trained model %s in %s..." %
-                  (trained_model["model_id"], common.DEFAULT_TRAINED_MODELS_FILE))
-    common.save_trained_model(common.DEFAULT_TRAINED_MODELS_FILE, trained_model)
 
     fw=open(common.DATA_DIR+'/results/train_results.txt','a')
     fw.write(trained_model["model_id"]+'\n')
@@ -377,7 +439,7 @@ def process(params,with_predict=True,with_eval=True):
         trained_models = pd.read_csv(common.DEFAULT_TRAINED_MODELS_FILE, sep='\t')
         model_config = trained_models[trained_models["model_id"] == trained_model["model_id"]]
         model_config = model_config.to_dict(orient="list")
-        testset = open(common.DATASETS_DIR+'/items_index_test_spectro_%s.tsv' % (config.dataset_settings["dataset"])).read().splitlines()
+        testset = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % (config.dataset_settings["dataset"])).read().splitlines()
         #if with_metadata:
         #    testset = open(common.DATASETS_DIR+'/train_data/index_test_%s_%s.tsv' % (metadata_source,config.dataset_settings["dataset"])).read().splitlines()
         #else:
@@ -387,7 +449,7 @@ def process(params,with_predict=True,with_eval=True):
         print("Factors created")
 
     if with_eval:
-        do_eval(trained_model["model_id"],get_knn=params['evaluating']['get_knn'],get_map=params['evaluating']['get_map'],get_p=params['evaluating']['get_p'],factors=factors,factors_index=factors_index)
+        do_eval(trained_model["model_id"],get_roc=False,get_map=True,get_p=False,factors=factors,factors_index=factors_index)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
