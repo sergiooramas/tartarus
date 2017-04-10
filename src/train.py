@@ -268,23 +268,25 @@ def batch_block_generator(params, y_path, N_train, id2gt, X_meta=None,
     if X_meta != None:
         with_meta = True
     while 1:
-        for i in range(0,N_train,block_step):
-            x_block = f['features'][i:min(N_train,i+block_step)]
-            index_block = f['index'][i:min(N_train,i+block_step)]
+        for i in range(0, N_train, block_step):
+            x_block = f['features'][i:min(N_train, i+block_step)]
+            index_block = f['index'][i:min(N_train, i+block_step)]
             #y_block = f['targets'][i:min(N_train,i+block_step)]
+            x_block = np.delete(x_block, np.where(index_block == ""), axis=0)
+            index_block = np.delete(index_block, np.where(index_block == ""))
             y_block = np.asarray([id2gt[id] for id in index_block])
-            if params['training']['normalize_y'] == True:
-                normalize(y_block,copy=False)
+            if params['training']['normalize_y']:
+                normalize(y_block, copy=False)
             items_list = range(x_block.shape[0])
             if randomize:
                 random.shuffle(items_list)
-            for j in range(0,len(items_list),batch_size):
+            for j in range(0, len(items_list), batch_size):
                 if j+batch_size <= x_block.shape[0]:
                     items_in_batch = items_list[j:j+batch_size]
                     x_batch = x_block[items_in_batch]
                     y_batch = y_block[items_in_batch]
                     if with_meta:
-                        x_batch = [x_batch,X_meta[items_in_batch]]
+                        x_batch = [x_batch, X_meta[items_in_batch]]
                     yield (x_batch, y_batch)
 
 def process(params,with_predict=True,with_eval=True):
