@@ -12,7 +12,7 @@ from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.utils.io_utils import HDF5Matrix
 from sklearn.preprocessing import StandardScaler, normalize
-from sklearn.metrics import roc_curve, auc, roc_auc_score
+from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_score, recall_score, f1_score, accuracy_score
 from scipy.sparse import csr_matrix
 #from keras.utils.visualize_util import plot
 from keras.optimizers import SGD, Adam
@@ -213,7 +213,9 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
     if val_from_file:
         hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
         f = h5py.File(hdf5_file,"r")
-        N_train = f["index"].shape[0]
+        index_train = f["index"][:]
+        index_train = np.delete(index_train, np.where(index_train == ""))
+        N_train = index_train.shape[0]
         
         val_hdf5_file = common.PATCHES_DIR+"/patches_val_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
         f_val = h5py.File(val_hdf5_file,"r")
@@ -223,6 +225,8 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         index_factors_val = open(common.DATASETS_DIR+'/items_index_val_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))            
         index_val = f_val['index'][:]
+        X_val = np.delete(X_val, np.where(index_val == ""), axis=0)
+        index_val = np.delete(index_val, np.where(index_val == ""))                
         Y_val = np.asarray([id2gt_val[id] for id in index_val])
 
         test_hdf5_file = common.PATCHES_DIR+"/patches_test_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
@@ -233,20 +237,34 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         index_factors_test = open(common.DATASETS_DIR+'/items_index_test_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))            
         index_test = f_test['index'][:]
+        X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
+        index_test = np.delete(index_test, np.where(index_test == ""))                
         Y_test = np.asarray([id2gt_test[id] for id in index_test])
     else:
         hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
         f = h5py.File(hdf5_file,"r")
-        N = f["targets"].shape[0]
+        index_all = f["index"][:]
+        #index_all = np.delete(index_all, np.where(index_all == ""))
+        N = index_all.shape[0]
         train_percent = 1 - val_percent - test_percent
         N_train = int(train_percent * N)
         N_val = int(val_percent * N)
         X_val = f['features'][N_train:N_train+N_val]
         index_val = f['index'][N_train:N_train+N_val]
+        print(index_val)
+        X_val = np.delete(X_val, np.where(index_val == ""), axis=0)
+        index_val = np.delete(index_val, np.where(index_val == ""))                
+        print("val",len(index_val))
         Y_val = np.asarray([id2gt[id] for id in index_val])
         X_test = f['features'][N_train+N_val:N]
         index_test = f['index'][N_train+N_val:N]
+        X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
+        index_test = np.delete(index_test, np.where(index_test == ""))                
         Y_test = np.asarray([id2gt[id] for id in index_test])
+        print("test",len(index_test))
+        index_train = f['index'][:N_train]
+        index_train = np.delete(index_train, np.where(index_train == ""))
+        N_train = index_train.shape[0]
     if X_meta != None:
         X_val = [X_val,X_meta[N_train:N_train+N_val]]
         X_test = [X_test,X_meta[N_train+N_val:N]]
@@ -266,6 +284,8 @@ def batch_block_generator(params, y_path, N_train, id2gt, X_meta = None, val_fro
             x_block = f['features'][i:min(N_train,i+block_step)]
             index_block = f['index'][i:min(N_train,i+block_step)]
             #y_block = f['targets'][i:min(N_train,i+block_step)]
+            x_block = np.delete(x_block, np.where(index_block == ""), axis=0)
+            index_block = np.delete(index_block, np.where(index_block == ""))
             y_block = np.asarray([id2gt[id] for id in index_block])
             if params['training']['normalize_y'] == True:
                 normalize(y_block,copy=False)
@@ -346,6 +366,9 @@ def process(params,with_predict=True,with_eval=True):
             index_factors = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
             id2gt = dict((index,factor) for (index,factor) in zip(index_factors,factors))            
             X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],config.y_path,id2gt,X_meta,config.training_params["val_from_file"])
+            if params['dataset']['nsamples'] != 'all':
+                N_train = min(N_train,params['dataset']['nsamples'])
+
         else:
             X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train = load_data_hf5(params,config.training_params["validation"],config.training_params["test"])
 
@@ -368,6 +391,7 @@ def process(params,with_predict=True,with_eval=True):
                   callbacks=[early_stopping])
     else:
         if with_generator:
+            print(N_train)
             epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train,id2gt,X_meta,config.training_params["val_from_file"]),
                         samples_per_epoch = N_train-(N_train % config.training_params["n_minibatch"]),
                         nb_epoch = config.training_params["n_epochs"],
@@ -401,6 +425,17 @@ def process(params,with_predict=True,with_eval=True):
 
     preds=model.predict(X_test)
     print(preds.shape)
+    if params["dataset"]["evaluation"] in ['binary','multiclass']:
+        #if preds.shape[-1] > 1:
+        #    y_pred = preds.argmax(axis=-1)
+        #else:
+        y_pred = (preds > 0.5).astype('int32')        
+        acc = accuracy_score(Y_test,y_pred)
+        prec = precision_score(Y_test,y_pred,average='macro')
+        recall = recall_score(Y_test,y_pred,average='macro')
+        f1 = f1_score(Y_test,y_pred,average='macro')
+        print('Accuracy', acc)
+        print("%.3f\t%.3f\t%.3f" % (prec,recall,f1))
     if params["dataset"]["fact"] == 'class':
         good_classes = np.nonzero(Y_test.sum(0))[0]
         roc_auc=roc_auc_score(Y_test[:,good_classes],preds[:,good_classes])
@@ -444,7 +479,10 @@ def process(params,with_predict=True,with_eval=True):
         #    testset = open(common.DATASETS_DIR+'/train_data/index_test_%s_%s.tsv' % (metadata_source,config.dataset_settings["dataset"])).read().splitlines()
         #else:
         #    testset=open(common.DATASETS_DIR+'/testset_%s.tsv' % config.dataset_settings["dataset"]).read().splitlines()
-        factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source)
+        if config.training_params["val_from_file"]:
+            factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source, with_patches=True)
+        else:
+            factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source)
         #predict(trained_model["model_id"])
         print("Factors created")
 
