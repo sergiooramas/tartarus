@@ -251,17 +251,14 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         N_val = int(val_percent * N)
         X_val = f['features'][N_train:N_train+N_val]
         index_val = f['index'][N_train:N_train+N_val]
-        print(index_val)
         X_val = np.delete(X_val, np.where(index_val == ""), axis=0)
         index_val = np.delete(index_val, np.where(index_val == ""))                
-        print("val",len(index_val))
         Y_val = np.asarray([id2gt[id] for id in index_val])
         X_test = f['features'][N_train+N_val:N]
         index_test = f['index'][N_train+N_val:N]
         X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
         index_test = np.delete(index_test, np.where(index_test == ""))                
         Y_test = np.asarray([id2gt[id] for id in index_test])
-        print("test",len(index_test))
         index_train = f['index'][:N_train]
         index_train = np.delete(index_train, np.where(index_train == ""))
         N_train = index_train.shape[0]
