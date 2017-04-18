@@ -191,7 +191,6 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
     global sim_matrix 
     #local_path = "/scratch/soramas"
     local_path = common.DATASETS_DIR
-    model_settings['evaluation'] = 'multiclass'
     # Load factors and ground truth
     if model_settings['evaluation'] in ['binary','multiclass','multilabel']:
         actual_matrix = np.load(common.DATASETS_DIR+'/item_factors_test_%s_%s_%s.npy' % (model_settings['fact'],model_settings['dim'],model_settings['dataset']))            
@@ -210,12 +209,12 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
 
     # Predicted matrix
     if model_settings['fact'] == 'class':
-        predicted_matrix_map = factors.T
+        predicted_matrix_map = factors
         predicted_matrix_roc = factors[:,good_classes]
     else:
         if model_settings['fact'] == 'pmi':
             predicted_matrix_roc = pairwise.cosine_similarity(np.nan_to_num(factors),np.nan_to_num(user_factors))
-            predicted_matrix_map = predicted_matrix_roc.copy().T
+            predicted_matrix_map = predicted_matrix_roc.copy()
         else:
             predicted_matrix_roc = normalize(np.nan_to_num(factors)).dot(user_factors.T) # Items-Users
             predicted_matrix_map = predicted_matrix_roc.copy().T # Users-Items
@@ -261,15 +260,17 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
         print 'Accuracy', acc
         print "%.3f\t%.3f\t%.3f" % (prec,recall,f1)
         print [(i,l) for i,l in enumerate(labels)]
+        micro_prec = precision_score(actual_labels,predicted_labels,average='micro',labels=labels)
+        print "Micro precision", micro_prec
         cm = confusion_matrix(actual_labels,predicted_labels,labels=labels)
         print classification_report(actual_labels,predicted_labels,target_names=labels)
-        print_cm(cm, labels)
+        #print_cm(cm, labels)
         #plt.figure()
         #plot_confusion_matrix(cm, title='Not Normalized confusion matrix')
         #plt.savefig('confusion_notNormalized.png')
 
         M = cm.sum(axis=1)
-        print M
+        #print M
 
         # Normalize the confusion matrix by row (i.e by the number of samples in each class)
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -399,8 +400,9 @@ def do_eval(model_id, get_roc=False, get_map=False, get_p=False, start_user=0, n
 
     #if get_map:
     #    map_eval(model_id,model_settings,factors,factors_index)
+    model_settings['evaluation'] = 'multiclass'
     binary_classification = False
-    if "final_activation" in model_arch and model_arch["final_activation"] == 'softmax':
+    if model_settings["evaluation"] == "binary":
         binary_classification = True
 
     evaluate(model_id, model_settings, str_config, factors, factors_index, binary_classification, start_user, num_users, get_roc, get_map, get_p, batch)

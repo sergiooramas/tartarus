@@ -10,16 +10,17 @@ import librosa
 import h5py
 from random import shuffle
 
-SECONDS = 15
+SECONDS = 3
 SR = 22050
 HR = 1024
 N_FRAMES = int(SECONDS * SR / float(HR)) # 10 seconds of audio
 N_SAMPLES=1
 N_BINS = 96
-DATASET_NAME='multi2deT'
-SPECTRO_FOLDER='spectro_MSD_cqt'
-Y_PATH='class_250'
+DATASET_NAME='fsd-s'
+SPECTRO_FOLDER='spectro_FS'
+Y_PATH='class_397'
 MAX_N_SCALER=300000
+MSD = False
 
 PATCH_MEAN = -0.0027567206  # Computed from 50k patches
 PATCH_STD = 0.8436051       # Computed from 50k patches
@@ -48,13 +49,16 @@ def load_sparse_csr(filename):
 
 def sample_patch(mel_spec, n_frames):
     """Randomly sample a part of the mel spectrogram."""
-    r_idx = np.random.randint(0, high=mel_spec.shape[0] - n_frames + 1)
-    return mel_spec[r_idx:r_idx + n_frames]
+    if n_frames <= mel_spec.shape[0]:
+        r_idx = np.random.randint(0, high=mel_spec.shape[0] - n_frames + 1)
+        return mel_spec[r_idx:r_idx + n_frames]
+    else:
+        return np.vstack((mel_spec, np.zeros((n_frames - mel_spec.shape[0], mel_spec.shape[1]))))
 
 def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, scaler=None):
     if not os.path.exists(common.PATCHES_DIR):
         os.makedirs(common.PATCHES_DIR)
-    f = h5py.File(common.PATCHES_DIR+'/patches_%s_%s_%sx%s.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS),'w')
+    f = h5py.File(common.PATCHES_DIR+'/patches_%s_%s_%sx%s_tmp.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS),'w')
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
     items = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name, dataset_name)).read().splitlines()
     n_items = len(items) * N_SAMPLES
@@ -68,7 +72,10 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
     itemset = []
     itemset_index = []
     for t,track_id in enumerate(items):
-        msd_folder = track_id[2]+"/"+track_id[3]+"/"+track_id[4]+"/"
+        if MSD:
+            msd_folder = track_id[2]+"/"+track_id[3]+"/"+track_id[4]+"/"
+        else:
+            msd_folder = ""
         file = spec_folder+msd_folder+track_id+".pk"
         try:
             spec = pickle.load(open(file))
@@ -86,47 +93,70 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
                 except Exception as e:
                     print 'Error',e
                     print file
-        except:
+        except Exception as e:
+            print 'Error1',e
             pass
         if t%1000==0:
             print t
 
     print x_dset.shape
 
+    # Clean empty spectrograms
+    print "Cleaning empty spectrograms"
+    f2 = h5py.File(common.PATCHES_DIR+'/patches_%s_%s_%sx%s.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS),'w')
+    index = f['index'][:]
+    index_clean = np.where(index != "")[0]
+    n_items = len(index_clean)
+    x_dset2 = f2.create_dataset("features", (n_items,1,N_FRAMES,N_BINS), dtype='f')
+    i_dset2 = f2.create_dataset("index", (n_items,), maxshape=(n_items,), dtype='S18')
+    for i in range(0,len(index_clean)):
+        x_dset2[i] = x_dset[index_clean[i]]
+        i_dset2[i] = i_dset[index_clean[i]]
+
+    f.close()
+    os.remove(common.PATCHES_DIR+'/patches_%s_%s_%sx%s_tmp.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS))
+
     # Normalize
     if normalize:
         print "Normalizing"
         block_step = 10000
         for i in range(0,len(itemset),block_step):
-            x_block = f['features'][i:min(len(itemset),i+block_step)]
-            x_norm = (x_block - PATCH_MEAN) / float(PATCH_STD)
-            f['features'][i:min(len(itemset),i+block_step)] = x_norm
+            x_block = x_dset2[i:min(len(itemset),i+block_step)]
+            x_norm, scaler = scale(x_block,scaler)
+            x_dset2[i:min(len(itemset),i+block_step)] = x_norm
+        scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_SAMPLES,SECONDS)
+        pickle.dump(scaler,open(scaler_file,'wb'))
+    return scaler
+  
 
 def prepare_testset(dataset_name):
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
-    test_folder=common.DATA_DIR+'/spectro_%s_testset/' % DATASET_NAME
+    test_folder=common.DATA_DIR+'/spectro_%s_testset/' % dataset_name
     if not os.path.exists(test_folder):
         os.makedirs(test_folder)
     items = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % dataset_name).read().splitlines()
     testset = []
     testset_index = []
     for t,track_id in enumerate(items):
-        msd_folder = track_id[2]+"/"+track_id[3]+"/"+track_id[4]+"/"
+        if MSD:
+            msd_folder = track_id[2]+"/"+track_id[3]+"/"+track_id[4]+"/"
+        else:
+            msd_folder = ""
         file = spec_folder+msd_folder+track_id+".pk"
         try:
             spec = pickle.load(open(file))
-            if spec.shape[1] >= 322:
-                spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
-                pickle.dump(spec, open(test_folder+track_id+".pk","wb"))
-                testset.append(track_id)
-                testset_index.append(t)
-                if t%1000==0:
-                    print t
+            #if spec.shape[1] >= 322:
+            spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
+            pickle.dump(spec, open(test_folder+track_id+".pk","wb"))
+            testset.append(track_id)
+            testset_index.append(t)
+            if t%1000==0:
+                print t
         except:
             print "no exist", file
 
 if __name__ == '__main__':
-    prepare_trainset(DATASET_NAME,"train", with_factors=False)
-    prepare_trainset(DATASET_NAME,"val", with_factors=False)
-    prepare_trainset(DATASET_NAME,"test", with_factors=False)
-    # prepare_testset(DATASET_NAME)
+    scaler = prepare_trainset(DATASET_NAME,"train", with_factors=False)
+    #scaler = prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
+    scaler = prepare_trainset(DATASET_NAME,"test",scaler=scaler, with_factors=False)
+    prepare_testset(DATASET_NAME)
