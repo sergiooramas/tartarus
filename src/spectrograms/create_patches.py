@@ -16,11 +16,11 @@ HR = 1024
 N_FRAMES = int(SECONDS * SR / float(HR)) # 10 seconds of audio
 N_SAMPLES=1
 N_BINS = 96
-DATASET_NAME='fsd-s'
-SPECTRO_FOLDER='spectro_FS'
+DATASET_NAME='multi2deT'
+SPECTRO_FOLDER='spectro_MSD_cqt'
 Y_PATH='class_397'
 MAX_N_SCALER=300000
-MSD = False
+MSD = True
 
 PATCH_MEAN = -0.0027567206  # Computed from 50k patches
 PATCH_STD = 0.8436051       # Computed from 50k patches
@@ -127,7 +127,7 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
         scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_SAMPLES,SECONDS)
         pickle.dump(scaler,open(scaler_file,'wb'))
     return scaler
-  
+
 
 def prepare_testset(dataset_name):
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
