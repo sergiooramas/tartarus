@@ -22,6 +22,9 @@ Y_PATH='class_397'
 MAX_N_SCALER=300000
 MSD = False
 
+PATCH_MEAN = -0.0027567206  # Computed from 50k patches
+PATCH_STD = 0.8436051       # Computed from 50k patches
+
 def scale(X, scaler=None, max_N=MAX_N_SCALER):
     shape = X.shape
     X.shape = (shape[0], shape[2] * shape[3])
@@ -79,7 +82,7 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
             spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
             for i in range(0,N_SAMPLES):
                 try:
-                    sample = sample_patch(spec,N_FRAMES)                
+                    sample = sample_patch(spec,N_FRAMES)
                     x_dset[k,:,:,:] = sample.reshape(-1,sample.shape[0],sample.shape[1])
                     if with_factors:
                         y_dset[k,:] = factors[t]
@@ -124,6 +127,7 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
         scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_SAMPLES,SECONDS)
         pickle.dump(scaler,open(scaler_file,'wb'))
     return scaler
+  
 
 def prepare_testset(dataset_name):
     spec_folder=common.SPECTRO_PATH+SPECTRO_FOLDER+"/"
@@ -156,4 +160,3 @@ if __name__ == '__main__':
     #scaler = prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
     scaler = prepare_trainset(DATASET_NAME,"test",scaler=scaler, with_factors=False)
     prepare_testset(DATASET_NAME)
-    
