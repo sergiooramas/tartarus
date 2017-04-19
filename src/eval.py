@@ -243,7 +243,7 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
             fw.write(model_settings['meta-suffix']+"\n")
 
     if model_settings['evaluation'] in ['binary','multiclass']:
-        actual_matrix_map = actual_matrix_map.T
+        actual_matrix_map = actual_matrix_map
         labels = open(common.DATASETS_DIR+"/genre_labels_%s.tsv" % model_settings['dataset']).read().splitlines()
         predicted_matrix_binary = np.zeros(predicted_matrix_roc.shape)
         predicted_labels = []

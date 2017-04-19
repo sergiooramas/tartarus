@@ -205,7 +205,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     params['audio_genre'] = copy.deepcopy(nparams)
 
     #Audio Multilabel experiment
-    nparams = copy.deepcopy(models.params_5)
+    nparams = copy.deepcopy(models.params_13) # 5 tartarus 13 keunwoo
     nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
     nparams["dataset"]["fact"] = 'class'
     nparams["dataset"]["dim"] = 250
@@ -219,12 +219,14 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["with_metadata"] = False
     nparams["dataset"]["only_metadata"] = False
     nparams["dataset"]["configuration"] = suffix
-    nparams["cnn"]["architecture"] = '13' # 5
-    nparams["cnn"]["n_filters_1"] = 256
-    nparams["cnn"]["n_filters_2"] = 512
-    nparams["cnn"]["n_filters_3"] = 1024
-    nparams["cnn"]["n_filters_4"] = 1024
-    nparams["cnn"]["n_pool_3"] = (4,1)
+    # Our architecture
+    nparams["cnn"]["architecture"] = '13' # 5 tartarus / 13 keunwoo
+    #nparams["cnn"]["n_filters_1"] = 256 # comentar estos para 13
+    #nparams["cnn"]["n_filters_2"] = 512
+    #nparams["cnn"]["n_filters_3"] = 1024
+    #nparams["cnn"]["n_filters_4"] = 1024
+    #nparams["cnn"]["n_pool_3"] = (4,1)
+
     #nparams["cnn"]["n_dense"] = 2048
     nparams["cnn"]["final_activation"] = 'sigmoid'
     nparams["dataset"]["meta-suffix"] = ""
@@ -415,7 +417,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["dim"] = 397
     nparams["dataset"]["npatches"] = 1
     nparams["dataset"]["nsamples"] = 'all'
-    nparams["dataset"]["dataset"] = 'fsd'
+    nparams["dataset"]["dataset"] = 'fsd2'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = False
     nparams["training"]["val_from_file"] = False
@@ -433,6 +435,32 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["cnn"]["final_activation"] = 'softmax'
     add_extra_params(nparams, extra_params)
     params['w2v_multiclass'] = copy.deepcopy(nparams)    
+
+    #w2v multilabel experiment freesound
+    nparams = copy.deepcopy(models.params_82)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["dim"] = 419
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'fsd-m'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["training"]["val_from_file"] = False
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["configuration"] = suffix
+    nparams["cnn"]["architecture"] = '82' # 5
+    nparams["cnn"]["sequence_length"] = 10
+    nparams["cnn"]["embedding_dim"] = 300
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["filter_sizes"] = (1,)
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    add_extra_params(nparams, extra_params)
+    params['w2v_multilabel'] = copy.deepcopy(nparams)    
 
     #bow multiclass experiment freesound
     nparams = copy.deepcopy(models.params_6)
@@ -486,6 +514,33 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["meta-suffix"] = ""
     add_extra_params(nparams, extra_params)
     params['audio_multiclass'] = copy.deepcopy(nparams)
+
+
+    #Fact multimodal bi metadata input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multiclass' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = False
+    nparams["dataset"]["dim"] = 397
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '813'
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'softmax'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'fsd'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    nparams["cnn"]["n_metafeatures2"] = 2048
+    add_extra_params(nparams, extra_params)
+    params['multi_genre_bi_multiclass'] = copy.deepcopy(nparams)
     '''
     #Multimodal experiment
     nparams = params_6.copy()

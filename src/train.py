@@ -244,7 +244,6 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
         f = h5py.File(hdf5_file,"r")
         index_all = f["index"][:]
-        #index_all = np.delete(index_all, np.where(index_all == ""))
         N = index_all.shape[0]
         train_percent = 1 - val_percent - test_percent
         N_train = int(train_percent * N)
@@ -256,9 +255,14 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         Y_val = np.asarray([id2gt[id] for id in index_val])
         X_test = f['features'][N_train+N_val:N]
         index_test = f['index'][N_train+N_val:N]
+        print(index_test.shape)
+        print(X_test.shape)
         X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
         index_test = np.delete(index_test, np.where(index_test == ""))                
+        print(index_test.shape)
+        print(X_test.shape)
         Y_test = np.asarray([id2gt[id] for id in index_test])
+        print(Y_test.shape)
         index_train = f['index'][:N_train]
         index_train = np.delete(index_train, np.where(index_train == ""))
         N_train = index_train.shape[0]

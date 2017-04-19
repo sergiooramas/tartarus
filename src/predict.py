@@ -234,7 +234,7 @@ def predict_track_metadata(model, metadata=[], output_layer=-1):
         print('Error predicting track')
     return pred[0]
 
-def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False):
+def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, pred_dataset=""):
     """Evaluates the model across the whole dataset."""
     # Read the pre-trained model
     agg_method="mean"
@@ -248,7 +248,10 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
     factors=[]
     factors_index=[]
 
-    dataset_name = params["dataset"]
+    if pred_dataset == "":
+        dataset_name = params["dataset"]
+    else:
+        dataset_name = pred_dataset
     print(len(dataset))
     if with_metadata:
         if 'sparse' not in params:
@@ -351,6 +354,8 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
         fw.write('\n'.join(factors_index))
         fw.close()
         if set_name == "test":
+            if pred_dataset != "":
+                suffix = suffix+"_"+pred_dataset
             np.save(common.FACTORS_DIR+'/factors_%s%s' % (model_id,suffix),factors)
             fw=open(common.FACTORS_DIR+'/index_factors_%s%s.tsv' % (model_id,suffix),'w')
             fw.write('\n'.join(factors_index))
@@ -360,7 +365,7 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
     return factors, factors_index
 
 
-def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file="", spectro_folder="", set_name="test", rnd_selection=False, output_layer=-1, with_patches=False):
+def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file="", pred_dataset="", spectro_folder="", set_name="test", rnd_selection=False, output_layer=-1, with_patches=False):
     """Main process to perform the training.
 
     Parameters
@@ -399,7 +404,7 @@ def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file=
     f=open(dataset_tsv)
     dataset = f.read().splitlines()
     print(len(dataset))
-    factors, factors_index = obtain_factors(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches)
+    factors, factors_index = obtain_factors(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches, pred_dataset=pred_dataset)
     print('Factors created')
     #do_eval(model_id)
     #evaluate_factors(factors,eval(model_config['dataset_settings'][0]),model_id)
@@ -423,6 +428,12 @@ if __name__ == "__main__":
                         dest="test_file",
                         type=str,
                         help='File with a list of songs to predict',
+                        default="")
+    parser.add_argument('-pd',
+                        '--pred_dataset',
+                        dest="pred_dataset",
+                        type=str,
+                        help='File with metadata X to predict',
                         default="")
     parser.add_argument('-sf',
                         '--spectro_folder',
@@ -462,7 +473,7 @@ if __name__ == "__main__":
 
     # Parse arguments and call main process
     args = parser.parse_args()
-    predict(args.model_id, args.trained_tsv, args.test_file, args.spectro_folder, args.set_name, args.rnd_selection, args.output_layer, args.with_patches)
+    predict(args.model_id, args.trained_tsv, args.test_file, args.pred_dataset, args.spectro_folder, args.set_name, args.rnd_selection, args.output_layer, args.with_patches)
 
     # Finish
     logging.info("Done! Took %.2f seconds" % (time.time() - start_time))
