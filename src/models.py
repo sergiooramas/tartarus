@@ -437,7 +437,7 @@ def get_model_8(params):
 
     return model
 
-# Metadata  
+# Metadata
 def get_model_81(params):
 
     # metadata
@@ -457,7 +457,7 @@ def get_model_81(params):
 
     x2 = Dropout(params["dropout_factor"])(x2)
     """
-    
+
     dense4 = Dense(output_dim=params["n_out"], init="uniform", activation=params['final_activation'])
     xout = dense4(x2)
     logging.debug("Output CNN: %s" % str(dense4.output_shape))
@@ -605,7 +605,7 @@ params_82 = {
     'cnn' : {
         'dropout_factor' : 0.5,
         'sequence_length' : 500,
-        'embedding_dim' : 300,          
+        'embedding_dim' : 300,
         'filter_sizes' : (2, 3, 4),
         'num_filters' : 150,
         'dropout_prob' : (0.6, 0.7),
@@ -660,7 +660,7 @@ def get_model_82(params):
         #x = flatten(x)
         #logging.debug("Flatten: %s" % str(flatten.output_shape))
         convs.append(x)
-        
+
     if len(params['filter_sizes'])>1:
         merge = Merge(mode='concat')
         out = merge(convs)

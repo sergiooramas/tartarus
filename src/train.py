@@ -216,17 +216,18 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         index_train = f["index"][:]
         index_train = np.delete(index_train, np.where(index_train == ""))
         N_train = index_train.shape[0]
-        
+
         val_hdf5_file = common.PATCHES_DIR+"/patches_val_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
         f_val = h5py.File(val_hdf5_file,"r")
         X_val = f_val['features'][:]
         #Y_val = f_val['targets'][:]
         factors_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+y_path+'.npy')
         index_factors_val = open(common.DATASETS_DIR+'/items_index_val_'+params['dataset']['dataset']+'.tsv').read().splitlines()
-        id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))            
+        id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))
         index_val = f_val['index'][:]
         X_val = np.delete(X_val, np.where(index_val == ""), axis=0)
         index_val = np.delete(index_val, np.where(index_val == ""))                
+
         Y_val = np.asarray([id2gt_val[id] for id in index_val])
 
         test_hdf5_file = common.PATCHES_DIR+"/patches_test_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
@@ -235,10 +236,11 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         #Y_test = f_test['targets'][:]
         factors_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+y_path+'.npy')
         index_factors_test = open(common.DATASETS_DIR+'/items_index_test_'+params['dataset']['dataset']+'.tsv').read().splitlines()
-        id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))            
+        id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))
         index_test = f_test['index'][:]
         X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
         index_test = np.delete(index_test, np.where(index_test == ""))                
+
         Y_test = np.asarray([id2gt_test[id] for id in index_test])
     else:
         hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
@@ -271,7 +273,9 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         X_test = [X_test,X_meta[N_train+N_val:N]]
     return X_val, Y_val, X_test, Y_test, N_train
 
-def batch_block_generator(params, y_path, N_train, id2gt, X_meta = None, val_from_file = False):
+
+def batch_block_generator(params, y_path, N_train, id2gt, X_meta=None,
+                          val_from_file=False):
     hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
     block_step = 50000
@@ -281,25 +285,25 @@ def batch_block_generator(params, y_path, N_train, id2gt, X_meta = None, val_fro
     if X_meta != None:
         with_meta = True
     while 1:
-        for i in range(0,N_train,block_step):
-            x_block = f['features'][i:min(N_train,i+block_step)]
-            index_block = f['index'][i:min(N_train,i+block_step)]
+        for i in range(0, N_train, block_step):
+            x_block = f['features'][i:min(N_train, i+block_step)]
+            index_block = f['index'][i:min(N_train, i+block_step)]
             #y_block = f['targets'][i:min(N_train,i+block_step)]
             x_block = np.delete(x_block, np.where(index_block == ""), axis=0)
             index_block = np.delete(index_block, np.where(index_block == ""))
             y_block = np.asarray([id2gt[id] for id in index_block])
-            if params['training']['normalize_y'] == True:
-                normalize(y_block,copy=False)
+            if params['training']['normalize_y']:
+                normalize(y_block, copy=False)
             items_list = range(x_block.shape[0])
             if randomize:
                 random.shuffle(items_list)
-            for j in range(0,len(items_list),batch_size):
+            for j in range(0, len(items_list), batch_size):
                 if j+batch_size <= x_block.shape[0]:
                     items_in_batch = items_list[j:j+batch_size]
                     x_batch = x_block[items_in_batch]
                     y_batch = y_block[items_in_batch]
                     if with_meta:
-                        x_batch = [x_batch,X_meta[items_in_batch]]
+                        x_batch = [x_batch, X_meta[items_in_batch]]
                     yield (x_batch, y_batch)
 
 def process(params,with_predict=True,with_eval=True):
@@ -365,7 +369,7 @@ def process(params,with_predict=True,with_eval=True):
             id2gt = dict()
             factors = np.load(common.DATASETS_DIR+'/item_factors_train_'+config.y_path+'.npy')
             index_factors = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
-            id2gt = dict((index,factor) for (index,factor) in zip(index_factors,factors))            
+            id2gt = dict((index,factor) for (index,factor) in zip(index_factors,factors))
             X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],config.y_path,id2gt,X_meta,config.training_params["val_from_file"])
             if params['dataset']['nsamples'] != 'all':
                 N_train = min(N_train,params['dataset']['nsamples'])
@@ -382,7 +386,7 @@ def process(params,with_predict=True,with_eval=True):
     else:
         monitor_metric = 'val_loss'
     early_stopping = EarlyStopping(monitor=monitor_metric, patience=4)
-    
+
     if only_metadata:
         epochs = model.fit(X_train, Y_train,
                   batch_size=config.training_params["n_minibatch"],
@@ -404,7 +408,7 @@ def process(params,with_predict=True,with_eval=True):
                       batch_size=config.training_params["n_minibatch"],
                       shuffle='batch',
                       nb_epoch=config.training_params["n_epochs"],
-                      verbose=2, 
+                      verbose=2,
                       validation_data=(X_val, Y_val),
                       callbacks=[early_stopping])
 
