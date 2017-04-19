@@ -155,6 +155,6 @@ def prepare_testset(dataset_name):
 
 if __name__ == '__main__':
     prepare_trainset(DATASET_NAME, "train", with_factors=False)
-    # prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
+    prepare_trainset(DATASET_NAME, "val", with_factors=False)
     prepare_trainset(DATASET_NAME, "test", with_factors=False)
     prepare_testset(DATASET_NAME)
