@@ -1,6 +1,6 @@
 from keras.layers import Dense, Dropout, Activation, Flatten, Permute, Lambda, Input, merge, BatchNormalization, Embedding, LSTM, Bidirectional, Reshape, GRU, Merge, ELU
 from keras.layers import Convolution1D, GlobalMaxPooling1D, Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D, MaxPooling1D
-from keras.regularizers import l2
+from keras.regularizers import l2, l1
 from keras import regularizers
 from keras.models import Sequential, Model
 import logging
@@ -43,18 +43,23 @@ params_5 = {
         'n_filters_2' : 1024,
         'n_filters_3' : 2048,
         'n_filters_4' : 2048,
+        'n_filters_5' : 2048,
         'n_kernel_1' : (4, 96),
         'n_kernel_2' : (4, 1),
         'n_kernel_3' : (4, 1),
         'n_kernel_4' : (1, 1),
+        'n_kernel_5' : (1, 1),
         'n_out' : '',
         'n_pool_1' : (4, 1),
         'n_pool_2' : (4, 1),
         'n_pool_3' : (1, 1),
         'n_pool_4' : (1, 1),
+        'n_pool_5' : (1, 1),
         'n_frames' : '',
         'n_mel' : 96,
-        'architecture' : 2
+        'architecture' : 2,
+        'batch_norm' : False,
+        'dropout' : True
     },
     'predicting' : {
         'trim_coeff' : 0.15
@@ -542,6 +547,34 @@ def get_model_812(params):
 
     return model
 
+# Metadata 2 inputs, necesita meta-suffix2
+def get_model_813(params):
+
+    # metadata
+    inputs = Input(shape=(params["n_metafeatures"],))
+    reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x1 = reg(inputs)
+
+    inputs2 = Input(shape=(params["n_metafeatures2"],))
+    reg2 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x2 = reg2(inputs2)
+
+    # merge
+    x = merge([x1, x2], mode='concat', concat_axis=1)
+
+    x = Dropout(params["dropout_factor"])(x)
+
+    dense4 = Dense(output_dim=params["n_out"], init="uniform", activation=params['final_activation'])
+    xout = dense4(x)
+    logging.debug("Output CNN: %s" % str(dense4.output_shape))
+
+    if params['final_activation'] == 'linear':
+        reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+        xout = reg(xout)
+
+    model = Model(input=[inputs,inputs2], output=xout)
+
+    return model
 
 params_82 = {
     # dataset params
@@ -928,6 +961,66 @@ def get_model_12(params):
 
     return model
 
+params_13 = {
+    # dataset params
+    'dataset' : {
+        'fact' : 'nmf',
+        'dim' : 200,
+        'dataset' : 'W2',
+        'window' : 15,
+        'nsamples' : 'all',
+        'npatches' : 3
+    },
+
+    # training params
+    'training' : {
+        'decay' : 1e-6,
+        'learning_rate' : 0.1,
+        'momentum' : 0.95,
+        'n_epochs' : 100,
+        'n_minibatch' : 32,
+        'nesterov' : True,
+        'validation' : 0.1,
+        'test' : 0.1,
+        'loss_func' : 'cosine',
+        'optimizer' : 'adam'
+    },
+    # cnn params
+    'cnn' : {
+        'dropout_factor' : 0.5,
+        'n_dense' : 0,
+        'n_filters_1' : 64,
+        'n_filters_2' : 128,
+        'n_filters_3' : 128,
+        'n_filters_4' : 128,
+        'n_filters_5' : 64,
+        'n_kernel_1' : (3, 3),
+        'n_kernel_2' : (3, 3),
+        'n_kernel_3' : (3, 3),
+        'n_kernel_4' : (3, 3),
+        'n_kernel_5' : (3, 3),
+        'n_out' : '',
+        'n_pool_1' : (4, 2),
+        'n_pool_2' : (4, 2),
+        'n_pool_3' : (4, 2),
+        'n_pool_4' : (5, 3),
+        'n_pool_5' : (1, 4),
+        'n_frames' : '',
+        'n_mel' : 96,
+        'architecture' : 2,
+        'batch_norm' : False,
+        'dropout' : True
+    },
+    'predicting' : {
+        'trim_coeff' : 0.15
+    },
+    'evaluating' : {
+        'get_map' : False,
+        'get_p' : True,
+        'get_knn' : False
+    }
+}
+
 # Keunwoochoi architecture ISMIR
 def get_model_13(params):
     # Determine input axis
@@ -943,57 +1036,90 @@ def get_model_13(params):
     # Input block
     inputs = Input(shape=(1, params["n_frames"],
                                          params["n_mel"]))
-    x = BatchNormalization(axis=freq_axis, name='bn_0_freq')(inputs)
+    
+    if params["batch_norm"]:
+        inputs = BatchNormalization(axis=freq_axis, name='bn_0_freq')(inputs)
 
     # Conv block 1
-    conv2d = Convolution2D(64, 3, 3, border_mode='same', name='conv1')
-    x = conv2d(x)
+    conv2d = Convolution2D(params["n_filters_1"], params["n_kernel_1"][0],
+                            params["n_kernel_1"][1], border_mode='same', name='conv1')
+    x = conv2d(inputs)
     logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
-    x = BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
+
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
     x = ELU()(x)
-    maxpool = MaxPooling2D(pool_size=(2, 4), name='pool1')
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_1"][0],
+                                      params["n_pool_1"][1]), name='pool1')
     x = maxpool(x)
     logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
 
     # Conv block 2
-    conv2d = Convolution2D(128, 3, 3, border_mode='same', name='conv2')
+    conv2d = Convolution2D(params["n_filters_2"], params["n_kernel_2"][0],
+                            params["n_kernel_2"][1], border_mode='same', name='conv2')
     x = conv2d(x)
     logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
-    x = BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
     x = ELU()(x)
-    maxpool = MaxPooling2D(pool_size=(2, 4), name='pool2')
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_2"][0],
+                                      params["n_pool_2"][1]), name='pool2')
     x = maxpool(x)
     logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
 
     # Conv block 3
-    conv2d = Convolution2D(128, 3, 3, border_mode='same', name='conv3')
+    conv2d = Convolution2D(params["n_filters_3"], params["n_kernel_3"][0],
+                            params["n_kernel_3"][1], border_mode='same', name='conv3')
     x = conv2d(x)
     logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
-    x = BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
     x = ELU()(x)
-    maxpool = MaxPooling2D(pool_size=(2, 4), name='pool3')
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_3"][0],
+                                      params["n_pool_3"][1]), name='pool3')
     x = maxpool(x)
     logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
 
     # Conv block 4
-    conv2d = Convolution2D(128, 3, 3, border_mode='same', name='conv4')
+    conv2d = Convolution2D(params["n_filters_4"], params["n_kernel_4"][0],
+                            params["n_kernel_4"][1], border_mode='same', name='conv4')
     x = conv2d(x)
     logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
-    x = BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
     x = ELU()(x)
-    maxpool = MaxPooling2D(pool_size=(3, 1), name='pool4')
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_4"][0],
+                                      params["n_pool_4"][1]), name='pool4')
     x = maxpool(x)
     logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
 
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
     # Conv block 5
-    conv2d = Convolution2D(64, 3, 3, border_mode='same', name='conv5')
+    conv2d = Convolution2D(params["n_filters_5"], params["n_kernel_5"][0],
+                            params["n_kernel_5"][1], border_mode='same', name='conv5')
     x = conv2d(x)
     logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
-    x = BatchNormalization(axis=channel_axis, mode=0, name='bn5')(x)
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn5')(x)
     x = ELU()(x)
-    maxpool = MaxPooling2D(pool_size=(4, 1), name='pool5')
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_5"][0],
+                                      params["n_pool_5"][1]), name='pool5')
     x = maxpool(x)
     logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
 
     # Output
     flat = Flatten()
