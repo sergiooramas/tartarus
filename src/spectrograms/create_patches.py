@@ -55,7 +55,7 @@ def sample_patch(mel_spec, n_frames):
     else:
         return np.vstack((mel_spec, np.zeros((n_frames - mel_spec.shape[0], mel_spec.shape[1]))))
 
-def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, scaler=None):
+def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True):
     if not os.path.exists(common.PATCHES_DIR):
         os.makedirs(common.PATCHES_DIR)
     f = h5py.File(common.PATCHES_DIR+'/patches_%s_%s_%sx%s_tmp.hdf5' % (set_name,dataset_name,N_SAMPLES,SECONDS),'w')
@@ -121,12 +121,9 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True, 
         print "Normalizing"
         block_step = 10000
         for i in range(0,len(itemset),block_step):
-            x_block = x_dset2[i:min(len(itemset),i+block_step)]
-            x_norm, scaler = scale(x_block,scaler)
-            x_dset2[i:min(len(itemset),i+block_step)] = x_norm
-        scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s_%sx%s.pk' % (DATASET_NAME,N_SAMPLES,SECONDS)
-        pickle.dump(scaler,open(scaler_file,'wb'))
-    return scaler
+            x_block = f['features'][i:min(len(itemset),i+block_step)]
+            x_norm = (x_block - PATCH_MEAN) / float(PATCH_STD)
+            f['features'][i:min(len(itemset),i+block_step)] = x_norm
 
 
 def prepare_testset(dataset_name):
@@ -155,8 +152,9 @@ def prepare_testset(dataset_name):
         except:
             print "no exist", file
 
+
 if __name__ == '__main__':
-    scaler = prepare_trainset(DATASET_NAME,"train", with_factors=False)
-    #scaler = prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
-    scaler = prepare_trainset(DATASET_NAME,"test",scaler=scaler, with_factors=False)
+    prepare_trainset(DATASET_NAME, "train", with_factors=False)
+    # prepare_trainset(DATASET_NAME,"val",scaler=scaler, with_factors=False)
+    prepare_trainset(DATASET_NAME, "test", with_factors=False)
     prepare_testset(DATASET_NAME)
