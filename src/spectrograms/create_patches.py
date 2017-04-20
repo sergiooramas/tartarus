@@ -123,7 +123,7 @@ def prepare_trainset(dataset_name, set_name, normalize=True, with_factors=True):
         for i in range(0,len(itemset),block_step):
             x_block = f2['features'][i:min(len(itemset),i+block_step)]
             x_norm = (x_block - PATCH_MEAN) / float(PATCH_STD)
-            f['features'][i:min(len(itemset),i+block_step)] = x_norm
+            f2['features'][i:min(len(itemset),i+block_step)] = x_norm
 
 
 def prepare_testset(dataset_name):
