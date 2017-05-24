@@ -43,7 +43,7 @@ params_5 = {
         'n_filters_2' : 1024,
         'n_filters_3' : 2048,
         'n_filters_4' : 2048,
-        'n_filters_5' : 2048,
+        'n_filters_5' : 0,
         'n_kernel_1' : (4, 96),
         'n_kernel_2' : (4, 1),
         'n_kernel_3' : (4, 1),
@@ -110,6 +110,7 @@ def get_model_5(params):
         model.add(Convolution2D(params["n_filters_3"],
                                 params["n_kernel_3"][0],
                                 params["n_kernel_3"][1],
+                                border_mode='valid',
                                 init="uniform"))
         #model.add(BatchNormalization())
         model.add(Activation("relu"))
@@ -125,6 +126,7 @@ def get_model_5(params):
         model.add(Convolution2D(params["n_filters_4"],
                                 params["n_kernel_4"][0],
                                 params["n_kernel_4"][1],
+                                border_mode='valid',
                                 init="uniform"))
         model.add(Activation("relu"))
         #model.add(BatchNormalization())
@@ -137,10 +139,152 @@ def get_model_5(params):
 
         model.add(Dropout(params["dropout_factor"]))
 
+    if params["n_filters_5"] > 0:
+        model.add(Convolution2D(params["n_filters_5"],
+                                params["n_kernel_5"][0],
+                                params["n_kernel_5"][1],
+                                border_mode='valid',
+                                init="uniform"))
+        model.add(Activation("relu"))
+        #model.add(BatchNormalization())
+        logging.debug("Output Conv2D: %s" % str(model.output_shape))
+
+        model.add(MaxPooling2D(pool_size=(params["n_pool_5"][0],
+                                          params["n_pool_5"][1])))
+
+        logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
+
+        model.add(Dropout(params["dropout_factor"]))
+
     model.add(Flatten())
     logging.debug("Output Flatten: %s" % str(model.output_shape))
 
+    #model.add(Dropout(params["dropout_factor"]))
+
+    if params["n_dense"] > 0:
+        model.add(Dense(output_dim=params["n_dense"], init="uniform"))
+        model.add(Activation("relu"))
+        model.add(Dropout(params["dropout_factor"]))
+        logging.debug("Output Dense: %s" % str(model.output_shape))
+
+        model.add(Dense(output_dim=params["n_dense"], init="uniform"))
+        model.add(Activation("relu"))
+        model.add(Dropout(params["dropout_factor"]))
+        logging.debug("Output Dense: %s" % str(model.output_shape))
+
+    model.add(Dense(output_dim=params["n_out"], init="uniform"))
+    model.add(Activation(params["final_activation"]))
+    logging.debug("Output CNN: %s" % str(model.output_shape))
+
+    if params['final_activation'] == 'linear':
+        model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
+
+    return model
+
+# Jordi various filters
+def get_model_51(params):
+    graph_in = Input(shape=(1, params["n_frames"],params["n_mel"]))
+    convs = []
+    params['filter_sizes'] = [(1,70),(5,70),(10,70),(1,35),(5,35),(10,35)]
+    params['filter_widths'] = [64,32,32,64,32,32]
+    for i,fsz in enumerate(params['filter_sizes']):
+        conv = Convolution2D(params['filter_widths'][i],fsz[0],fsz[1],
+                             border_mode='same',
+                             activation='relu',
+                             init='uniform')
+        x = conv(graph_in)
+        logging.debug("Filter size: %s,%s" % (fsz[0],fsz[1]))
+        logging.debug("Output CNN: %s" % str(conv.output_shape))
+        convs.append(x)
+
+    if len(params['filter_sizes'])>1:
+        merge1 = Merge(mode='concat',concat_axis=1)
+        out = merge1(convs)
+        logging.debug("Merge: %s" % str(merge1.output_shape))
+    else:
+        out = convs[0]
+
+    graph = Model(input=graph_in, output=out)
+
+    model = Sequential()
+    model.add(graph)
+
+    model.add(MaxPooling2D(pool_size=(params["n_pool_1"][0],
+                                      params["n_pool_1"][1])))
+    logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
     model.add(Dropout(params["dropout_factor"]))
+
+    #model.add(Permute((3,2,1)))
+
+    model.add(Convolution2D(params["n_filters_2"], params["n_kernel_2"][0],
+                            params["n_kernel_2"][1],
+                            border_mode='valid',
+                            init="uniform"))
+    #model.add(BatchNormalization())
+    model.add(Activation("relu"))
+    #logging.debug("Input CNN: %s" % str(model.input_shape))
+    logging.debug("Output Conv2D: %s" % str(model.output_shape))
+
+    model.add(MaxPooling2D(pool_size=(params["n_pool_2"][0],
+                                      params["n_pool_2"][1])))
+    logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
+    model.add(Dropout(params["dropout_factor"]))
+
+    #model.add(Permute((3,2,1)))
+    if params["n_filters_3"] > 0:
+        model.add(Convolution2D(params["n_filters_3"],
+                                params["n_kernel_3"][0],
+                                params["n_kernel_3"][1],
+                                border_mode='valid',
+                                init="uniform"))
+        #model.add(BatchNormalization())
+        model.add(Activation("relu"))
+        logging.debug("Output Conv2D: %s" % str(model.output_shape))
+
+        model.add(MaxPooling2D(pool_size=(params["n_pool_3"][0],
+                                          params["n_pool_3"][1])))
+
+        logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
+        model.add(Dropout(params["dropout_factor"]))
+
+    if params["n_filters_4"] > 0:
+        model.add(Convolution2D(params["n_filters_4"],
+                                params["n_kernel_4"][0],
+                                params["n_kernel_4"][1],
+                                border_mode='valid',
+                                init="uniform"))
+        model.add(Activation("relu"))
+        #model.add(BatchNormalization())
+        logging.debug("Output Conv2D: %s" % str(model.output_shape))
+
+        model.add(MaxPooling2D(pool_size=(params["n_pool_4"][0],
+                                          params["n_pool_4"][1])))
+
+        logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
+
+        model.add(Dropout(params["dropout_factor"]))
+
+    if params["n_filters_5"] > 0:
+        model.add(Convolution2D(params["n_filters_5"],
+                                params["n_kernel_5"][0],
+                                params["n_kernel_5"][1],
+                                border_mode='valid',
+                                init="uniform"))
+        model.add(Activation("relu"))
+        #model.add(BatchNormalization())
+        logging.debug("Output Conv2D: %s" % str(model.output_shape))
+
+        model.add(MaxPooling2D(pool_size=(params["n_pool_5"][0],
+                                          params["n_pool_5"][1])))
+
+        logging.debug("Output MaxPool2D: %s" % str(model.output_shape))
+
+        model.add(Dropout(params["dropout_factor"]))
+
+    model.add(Flatten())
+    logging.debug("Output Flatten: %s" % str(model.output_shape))
+
+    #model.add(Dropout(params["dropout_factor"]))
 
     if params["n_dense"] > 0:
         model.add(Dense(output_dim=params["n_dense"], init="uniform"))
@@ -208,7 +352,9 @@ params_6 = {
         'n_frames' : '',
         'n_mel' : 96,
         'architecture' : 2,
-        'n_metafeatures' : 7927#5393
+        'n_metafeatures' : 7927, #5393
+        'n_metafeatures2' : 4096, #5393
+        'n_metafeatures3' : 4096 #5393
     },
     'predicting' : {
         'trim_coeff' : 0.15
@@ -444,6 +590,9 @@ def get_model_81(params):
     inputs2 = Input(shape=(params["n_metafeatures"],))
     x2 = Dropout(params["dropout_factor"])(inputs2)
 
+    reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x2 = reg(x2)
+
     """
     dense2 = Dense(output_dim=params["n_dense"], init="uniform", activation='relu')
     x2 = dense2(x2)
@@ -564,6 +713,10 @@ def get_model_813(params):
 
     x = Dropout(params["dropout_factor"])(x)
 
+    #dense2 = Dense(output_dim=params["n_dense"], init="uniform", activation='relu')
+    #x = dense2(x)
+    #logging.debug("Output CNN: %s" % str(dense2.output_shape))
+
     dense4 = Dense(output_dim=params["n_out"], init="uniform", activation=params['final_activation'])
     xout = dense4(x)
     logging.debug("Output CNN: %s" % str(dense4.output_shape))
@@ -573,6 +726,43 @@ def get_model_813(params):
         xout = reg(xout)
 
     model = Model(input=[inputs,inputs2], output=xout)
+
+    return model
+
+# Metadata 2 inputs, necesita meta-suffix2
+def get_model_814(params):
+
+    # metadata
+    inputs = Input(shape=(params["n_metafeatures"],))
+    reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x1 = reg(inputs)
+
+    inputs2 = Input(shape=(params["n_metafeatures2"],))
+    reg2 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x2 = reg2(inputs2)
+
+    inputs3 = Input(shape=(params["n_metafeatures3"],))
+    reg3 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x3 = reg3(inputs3)
+
+    # merge
+    x = merge([x1, x2, x3], mode='concat', concat_axis=1)
+
+    x = Dropout(params["dropout_factor"])(x)
+
+    #dense2 = Dense(output_dim=params["n_dense"], init="uniform", activation='relu')
+    #x = dense2(x)
+    #logging.debug("Output CNN: %s" % str(dense2.output_shape))
+
+    dense4 = Dense(output_dim=params["n_out"], init="uniform", activation=params['final_activation'])
+    xout = dense4(x)
+    logging.debug("Output CNN: %s" % str(dense4.output_shape))
+
+    if params['final_activation'] == 'linear':
+        reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+        xout = reg(xout)
+
+    model = Model(input=[inputs,inputs2,inputs3], output=xout)
 
     return model
 
@@ -606,9 +796,9 @@ params_82 = {
         'dropout_factor' : 0.5,
         'sequence_length' : 500,
         'embedding_dim' : 300,
-        'filter_sizes' : (2, 3, 4),
+        'filter_sizes' : (2, 3),
         'num_filters' : 150,
-        'dropout_prob' : (0.6, 0.7),
+        'dropout_prob' : (0.5, 0.8),
         'hidden_dims' : 2048,
         'batch_size' : 32,
         'num_epochs' : 100,
@@ -632,7 +822,7 @@ params_82 = {
 }
 
 def get_model_82(params):
-    embedding_weights = pickle.load(open("../data/datasets/train_data/embedding_weights_w2v-google_MSD-AG.pk","rb"))
+    embedding_weights = pickle.load(open("../data/datasets/train_data/embedding_weights_w2v_multi2deR.pk","rb"))
     graph_in = Input(shape=(params['sequence_length'], params['embedding_dim']))
     convs = []
     for fsz in params['filter_sizes']:
@@ -681,6 +871,27 @@ def get_model_82(params):
     model.add(Dropout(params['dropout_prob'][1]))
     model.add(Activation('relu'))
 
+    model.add(Dense(output_dim=params["n_out"], init="uniform"))
+    model.add(Activation(params['final_activation']))
+    logging.debug("Output CNN: %s" % str(model.output_shape))
+
+    if params['final_activation'] == 'linear':
+        model.add(Lambda(lambda x :K.l2_normalize(x, axis=1)))
+
+    return model
+
+
+def get_model_822(params):
+    embedding_weights = pickle.load(open("../data/datasets/train_data/embedding_weights_w2v-google_MSD-AG.pk","rb"))
+    # main sequential model
+    model = Sequential()
+    model.add(Embedding(len(embedding_weights[0]), params['embedding_dim'], input_length=params['sequence_length'],
+                        weights=embedding_weights))
+    #model.add(Dropout(params['dropout_prob'][0], input_shape=(params['sequence_length'], params['embedding_dim'])))
+    #model.add(Dense(params['hidden_dims']))
+    model.add(LSTM(2048))
+    #model.add(Dropout(params['dropout_prob'][1]))
+    #model.add(Activation('relu'))
     model.add(Dense(output_dim=params["n_out"], init="uniform"))
     model.add(Activation(params['final_activation']))
     logging.debug("Output CNN: %s" % str(model.output_shape))
@@ -743,12 +954,20 @@ params_9 = {
     }
 }
 
-def l2pooling(input,n_filters_per_unit):
-    output = input.reshape((input.shape[0], input.shape[1] / n_filters_per_unit, n_filters_per_unit, input.shape[2]))
-    padding = 0.000001
-    output = T.sqrt(T.mean(output**2, 2) + padding)
-    return output
+def l2pooling(input):
+    out = T.sqrt((input ** 2).mean([2, 3]))
+    #output = input.reshape((input.shape[0], input.shape[1] / n_filters_per_unit, n_filters_per_unit, input.shape[2]))
+    #padding = 0.000001
+    #output = T.sqrt(T.mean(output**2, 2) + padding)
+    return out
 
+def square(input):
+    return input ** 2
+
+def root(input):
+    return T.sqrt(input)
+
+# Dieleman
 def get_model_9(params):
     inputs = Input(shape=(1, params["n_frames"],
                                          params["n_mel"]))
@@ -813,12 +1032,22 @@ def get_model_9(params):
     x2 = flat(x2)
     logging.debug("Output Flatten: %s" % str(flat.output_shape))
 
-    flat = Flatten()
-    x = flat(x)
-    logging.debug("Output Flatten: %s" % str(flat.output_shape))
-    lambda1 = Lambda(lambda x :l2pooling(x, 4))
+    #lambda1 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    #x3 = lambda1(x)
+    lambda1 = Lambda(lambda x :square(x))
     x3 = lambda1(x)
-    logging.debug("Output Lambda: %s" % str(lambda1.output_shape))
+    logging.debug("Output Lambda1: %s" % str(lambda1.output_shape))
+    pool5 = AveragePooling2D(pool_size=(params["n_pool_3"][0],
+                                      params["n_pool_3"][1]))
+    x3 = pool5(x3)
+    logging.debug("Output AvgPool2D: %s" % str(pool4.output_shape))
+    lambda2 = Lambda(lambda x :root(x))
+    x3 = lambda2(x3)
+    logging.debug("Output Lambda2: %s" % str(lambda1.output_shape))
+
+    flat = Flatten()
+    x3 = flat(x3)
+    logging.debug("Output Flatten: %s" % str(flat.output_shape))
 
     # merge
     x = merge([x1, x2, x3], mode='concat', concat_axis=1)
@@ -841,8 +1070,8 @@ def get_model_9(params):
     xout = dense3(x)
     logging.debug("Output CNN: %s" % str(dense3.output_shape))
 
-    #lambda1 = Lambda(lambda x :K.l2_normalize(x, axis=1))
-    #xout = lambda1(xout)
+    lambda1 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    xout = lambda1(xout)
 
     model = Model(input=inputs, output=xout)
 
@@ -1137,6 +1366,278 @@ def get_model_13(params):
     model = Model(input=inputs, output=xout)
 
     return model
+
+params_14 = {
+    # dataset params
+    'dataset' : {
+        'fact' : 'nmf',
+        'dim' : 200,
+        'dataset' : 'W2',
+        'window' : 15,
+        'nsamples' : 'all',
+        'npatches' : 3
+    },
+
+    # training params
+    'training' : {
+        'decay' : 1e-6,
+        'learning_rate' : 0.1,
+        'momentum' : 0.95,
+        'n_epochs' : 100,
+        'n_minibatch' : 32,
+        'nesterov' : True,
+        'validation' : 0.1,
+        'test' : 0.1,
+        'loss_func' : 'cosine',
+        'optimizer' : 'adam'
+    },
+    # cnn params
+    'cnn' : {
+        'dropout_factor' : 0.5,
+        'n_dense' : 0,
+        'n_filters_1' : 64,
+        'n_filters_2' : 128,
+        'n_filters_3' : 128,
+        'n_filters_4' : 128,
+        'n_filters_5' : 0,
+        'n_kernel_1' : (3, 3),
+        'n_kernel_2' : (3, 3),
+        'n_kernel_3' : (3, 3),
+        'n_kernel_4' : (3, 3),
+        'n_kernel_5' : (3, 3),
+        'n_out' : '',
+        'n_pool_1' : (2, 2),
+        'n_pool_2' : (3, 3),
+        'n_pool_3' : (4, 4),
+        'n_pool_4' : (5, 3),
+        'n_pool_5' : (1, 4),
+        'n_frames' : '',
+        'n_mel' : 96,
+        'architecture' : 2,
+        'batch_norm' : False,
+        'dropout' : True
+    },
+    'predicting' : {
+        'trim_coeff' : 0.15
+    },
+    'evaluating' : {
+        'get_map' : False,
+        'get_p' : True,
+        'get_knn' : False
+    }
+}
+
+# Keunwoochoi architecture CRNN
+def get_model_14(params):
+    # Determine input axis
+    if K.image_dim_ordering() == 'th':
+        channel_axis = 1
+        freq_axis = 2
+        time_axis = 3
+    else:
+        channel_axis = 3
+        freq_axis = 1
+        time_axis = 2
+
+    # Input block
+    inputs = Input(shape=(1, params["n_frames"],
+                                         params["n_mel"]))
+    
+    if params["batch_norm"]:
+        inputs = BatchNormalization(axis=freq_axis, name='bn_0_freq')(inputs)
+
+    # Conv block 1
+    conv2d = Convolution2D(params["n_filters_1"], params["n_kernel_1"][0],
+                            params["n_kernel_1"][1], border_mode='same', name='conv1')
+    x = conv2d(inputs)
+    logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
+
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
+    x = ELU()(x)
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_1"][0],
+                                      params["n_pool_1"][1]), name='pool1')
+    x = maxpool(x)
+    logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
+    # Conv block 2
+    conv2d = Convolution2D(params["n_filters_2"], params["n_kernel_2"][0],
+                            params["n_kernel_2"][1], border_mode='same', name='conv2')
+    x = conv2d(x)
+    logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
+    x = ELU()(x)
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_2"][0],
+                                      params["n_pool_2"][1]), name='pool2')
+    x = maxpool(x)
+    logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
+    # Conv block 3
+    conv2d = Convolution2D(params["n_filters_3"], params["n_kernel_3"][0],
+                            params["n_kernel_3"][1], border_mode='same', name='conv3')
+    x = conv2d(x)
+    logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
+    x = ELU()(x)
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_3"][0],
+                                      params["n_pool_3"][1]), name='pool3')
+    x = maxpool(x)
+    logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
+    # Conv block 4
+    conv2d = Convolution2D(params["n_filters_4"], params["n_kernel_4"][0],
+                            params["n_kernel_4"][1], border_mode='same', name='conv4')
+    x = conv2d(x)
+    logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
+    x = ELU()(x)
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_4"][0],
+                                      params["n_pool_4"][1]), name='pool4')
+    x = maxpool(x)
+    logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
+    # Conv block 5
+    conv2d = Convolution2D(params["n_filters_5"], params["n_kernel_5"][0],
+                            params["n_kernel_5"][1], border_mode='same', name='conv5')
+    x = conv2d(x)
+    logging.debug("Output Conv2D: %s" % str(conv2d.output_shape))
+    if params["batch_norm"]:
+        x = BatchNormalization(axis=channel_axis, mode=0, name='bn5')(x)
+    x = ELU()(x)
+    maxpool = MaxPooling2D(pool_size=(params["n_pool_5"][0],
+                                      params["n_pool_5"][1]), name='pool5')
+    x = maxpool(x)
+    logging.debug("Output MaxPool: %s" % str(maxpool.output_shape))
+
+    if params["dropout"]:
+        x = Dropout(params["dropout_factor"])(x)
+
+    # Output
+    flat = Flatten()
+    x = flat(x)
+    logging.debug("Output Flatten: %s" % str(flat.output_shape))
+
+    dense = Dense(output_dim=params["n_out"], activation=params['final_activation'], name='output')
+    xout = dense(x)
+    logging.debug("Output CNN: %s" % str(dense.output_shape))
+
+    if params['final_activation'] == 'linear':
+        reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+        xout = reg(xout)
+
+    model = Model(input=inputs, output=xout)
+
+    return model
+
+# Keunwoo Choi CRNN
+def get_model_15(params):
+    weights=None
+    input_tensor=None
+    include_top=True    
+
+    # Determine proper input shape
+    if K.image_dim_ordering() == 'th':
+        input_shape = (1, 96, 1366)
+    else:
+        input_shape = (96, 1366, 1)
+
+    if input_tensor is None:
+        melgram_input = Input(shape=input_shape)
+    else:
+        if not K.is_keras_tensor(input_tensor):
+            melgram_input = Input(tensor=input_tensor, shape=input_shape)
+        else:
+            melgram_input = input_tensor
+
+    # Determine input axis
+    if K.image_dim_ordering() == 'th':
+        channel_axis = 1
+        freq_axis = 2
+        time_axis = 3
+    else:
+        channel_axis = 3
+        freq_axis = 1
+        time_axis = 2
+
+    # Input block
+    x = ZeroPadding2D(padding=(0, 37))(melgram_input)
+    x = BatchNormalization(axis=freq_axis, name='bn_0_freq')(x)
+    x = Permute((1, 3, 2))(x)
+
+    # Conv block 1
+    x = Convolution2D(64, 3, 3, border_mode='same', name='conv1')(x)
+    #x = BatchNormalization(axis=channel_axis, mode=0, name='bn1')(x)
+    x = ELU()(x)
+    #x = Permute((1, 3, 2))(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='pool1')(x)
+    #x = Permute((1, 3, 2))(x)
+    #x = Dropout(0.1, name='dropout1')(x)
+
+    # Conv block 2
+    x = Convolution2D(128, 3, 3, border_mode='same', name='conv2')(x)
+    #x = BatchNormalization(axis=channel_axis, mode=0, name='bn2')(x)
+    x = ELU()(x)
+    x = MaxPooling2D(pool_size=(3, 3), strides=(3, 3), name='pool2')(x)
+    #x = Dropout(0.1, name='dropout2')(x)
+
+    # Conv block 3
+    x = Convolution2D(128, 3, 3, border_mode='same', name='conv3')(x)
+    #x = BatchNormalization(axis=channel_axis, mode=0, name='bn3')(x)
+    x = ELU()(x)
+    x = MaxPooling2D(pool_size=(4, 4), strides=(4, 4), name='pool3')(x)
+    #x = Dropout(0.1, name='dropout3')(x)
+
+    # Conv block 4
+    x = Convolution2D(128, 3, 3, border_mode='same', name='conv4')(x)
+    #x = BatchNormalization(axis=channel_axis, mode=0, name='bn4')(x)
+    x = ELU()(x)
+    x = MaxPooling2D(pool_size=(4, 4), strides=(4, 4), name='pool4')(x)
+    #x = Dropout(0.1, name='dropout4')(x)
+
+    # reshaping
+    if K.image_dim_ordering() == 'th':
+        x = Permute((3, 2, 1))(x)
+    x = Reshape((15, 128))(x)
+
+    # GRU block 1, 2, output
+    x = GRU(32, return_sequences=True, name='gru1')(x)
+    x = GRU(32, return_sequences=False, name='gru2')(x)
+    #x = Dropout(0.3)(x)
+    if include_top:
+        x = Dense(params["n_out"], activation=params['final_activation'], name='output')(x)
+
+    if params['final_activation'] == 'linear':
+        reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+        x = reg(x)
+
+    # Create model
+    model = Model(melgram_input, x)
+    if weights is None:
+        return model
+    else: 
+        # Load input
+        if K.image_dim_ordering() == 'tf':
+            raise RuntimeError("Please set image_dim_ordering == 'th'."
+                               "You can set it at ~/.keras/keras.json")
+    
+        model.load_weights('../data/music_tagger_crnn_weights_%s.h5' % K._BACKEND,
+                           by_name=True)
+        return model
 
 def main():
     pass

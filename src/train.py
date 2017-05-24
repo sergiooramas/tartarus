@@ -12,7 +12,7 @@ from keras.models import Sequential, Model
 from keras.layers.normalization import BatchNormalization
 from keras.utils.io_utils import HDF5Matrix
 from sklearn.preprocessing import StandardScaler, normalize
-from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_score, recall_score, f1_score, accuracy_score
+from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_score, recall_score, f1_score, accuracy_score, average_precision_score
 from scipy.sparse import csr_matrix
 #from keras.utils.visualize_util import plot
 from keras.optimizers import SGD, Adam
@@ -142,8 +142,12 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
     if params['training']["val_from_file"]:
         Y_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+Y_path+'.npy')
         Y_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+Y_path+'.npy') #!!! OJO remove S from trainS
-        X_val = np.load(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npy' % (metadata_source,dataset))
-        X_test = np.load(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npy' % (metadata_source,dataset))
+        if params['dataset']['sparse']:
+            X_val = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npz' % (metadata_source,dataset)).todense()
+            X_test = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npz' % (metadata_source,dataset)).todense()
+        else:
+            X_val = np.load(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npy' % (metadata_source,dataset))
+            X_test = np.load(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npy' % (metadata_source,dataset))
         X_train = all_X
         Y_train = all_Y
     else:
@@ -317,12 +321,30 @@ def process(params,with_predict=True,with_eval=True):
         if 'w2v' in metadata_source:
             X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
             params['cnn']['n_metafeatures'] = len(X_meta[0])
+            if 'meta-suffix2' in params['dataset']:
+                X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures2'] = len(X_meta2[0])
+            if 'meta-suffix3' in params['dataset']:
+                X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         elif 'model' in metadata_source or not params['dataset']['sparse']:
             X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
             params['cnn']['n_metafeatures'] = len(X_meta[0])
+            if 'meta-suffix2' in params['dataset']:
+                X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures2'] = len(X_meta2[0])
+            if 'meta-suffix3' in params['dataset']:
+                X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         else:
             X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset'])).todense()
             params['cnn']['n_metafeatures'] = X_meta.shape[1]
+            if 'meta-suffix2' in params['dataset']:
+                X_meta2 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures2'] = X_meta2.shape[1]
+            if 'meta-suffix3' in params['dataset']:
+                X_meta3 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         print(X_meta.shape)
     else:
         X_meta = None
@@ -364,6 +386,17 @@ def process(params,with_predict=True,with_eval=True):
             #Y_val = [Y_val,Y_val2]
             #Y_test = [Y_test,Y_test2]
             print("X_train bi", len(X_train))
+        if 'meta-suffix3' in params['dataset']:
+            X_train3, Y_train3, X_val3, Y_val3, X_test3, Y_test3 = \
+                load_data_preprocesed(params, config.x_path, config.y_path, params['dataset']['dataset'], config.training_params["validation"],
+                          config.training_params["test"], config.dataset_settings["nsamples"], with_metadata, only_metadata, params['dataset']['meta-suffix3'])
+            X_train.append(X_train3)
+            X_val.append(X_val3)
+            X_test.append(X_test3)
+            #Y_train = [Y_train,Y_train2]
+            #Y_val = [Y_val,Y_val2]
+            #Y_test = [Y_test,Y_test2]
+            print("X_train tri", len(X_train))
     else:
         if with_generator:
             id2gt = dict()
@@ -427,7 +460,7 @@ def process(params,with_predict=True,with_eval=True):
     #print(C1)
     # Step prediction
 
-
+    print(X_test[0].shape,X_test[1].shape)
     preds=model.predict(X_test)
     print(preds.shape)
     if params["dataset"]["evaluation"] in ['binary','multiclass']:
@@ -443,10 +476,13 @@ def process(params,with_predict=True,with_eval=True):
         print("%.3f\t%.3f\t%.3f" % (prec,recall,f1))
     if params["dataset"]["fact"] == 'class':
         good_classes = np.nonzero(Y_test.sum(0))[0]
+        print(Y_test.shape,preds.shape)
         roc_auc=roc_auc_score(Y_test[:,good_classes],preds[:,good_classes])
         logging.debug('ROC-AUC '+str(roc_auc))
+        pr_auc = average_precision_score(Y_test[:,good_classes],preds[:,good_classes])
+        print('PR-AUC',pr_auc)
         r2 = roc_auc
-    else:
+    elif params["dataset"]["evaluation"] not in ['binary','multiclass','multilabel']:
         r2s = []
         for i,pred in enumerate(preds):
             r2 = r2_score(Y_test[i],pred)
@@ -454,26 +490,30 @@ def process(params,with_predict=True,with_eval=True):
         r2 = np.asarray(r2s).mean()
         logging.debug('R2 avg '+str(r2))
     # Batch prediction
-    score = model.evaluate(X_test, Y_test, verbose=0)
-    logging.debug(score)
-    logging.debug(model.metrics_names)
-    print(score)
-    trained_model["loss_score"] = score[0]
-    trained_model["mse"] = score[1]
-    trained_model["r2"] = r2
+    if X_test[1].shape == Y_test[1].shape:
+        score = model.evaluate(X_test, Y_test, verbose=0)
+        logging.debug(score)
+        logging.debug(model.metrics_names)
+        print(score)
+        trained_model["loss_score"] = score[0]
+        trained_model["mse"] = score[1]
+        if params["dataset"]["evaluation"] not in ['binary','multiclass','multilabel']:
+            trained_model["r2"] = r2
 
-    fw=open(common.DATA_DIR+'/results/train_results.txt','a')
-    fw.write(trained_model["model_id"]+'\n')
-    if params["training"]["loss_func"] == 'binary_crossentropy':
-        fw.write('ROC-AUC: '+str(roc_auc)+'\n')
-        print('ROC-AUC: '+str(roc_auc))
-    else:
-        fw.write('R2 avg: '+str(r2)+'\n')
-        print('R2 avg: '+str(r2))
-    fw.write('Loss: '+str(score[0])+' ('+config.training_params["loss_func"]+')\n')
-    fw.write('MSE: '+str(score[1])+'\n')
-    fw.write(json.dumps(epochs.history)+"\n\n")
-    fw.close()
+        fw=open(common.DATA_DIR+'/results/train_results.txt','a')
+        fw.write(trained_model["model_id"]+'\n')
+        if params["training"]["loss_func"] == 'binary_crossentropy':
+            fw.write('ROC-AUC: '+str(roc_auc)+'\n')
+            print('ROC-AUC: '+str(roc_auc))
+            fw.write('Loss: '+str(score[0])+' ('+config.training_params["loss_func"]+')\n')
+            fw.write('MSE: '+str(score[1])+'\n')
+        elif params["dataset"]["evaluation"] not in ['binary','multiclass','multilabel']:
+            fw.write('R2 avg: '+str(r2)+'\n')
+            print('R2 avg: '+str(r2))
+            fw.write('Loss: '+str(score[0])+' ('+config.training_params["loss_func"]+')\n')
+            fw.write('MSE: '+str(score[1])+'\n')
+        fw.write(json.dumps(epochs.history)+"\n\n")
+        fw.close()
 
     if with_predict:
         trained_models = pd.read_csv(common.DEFAULT_TRAINED_MODELS_FILE, sep='\t')
@@ -484,7 +524,7 @@ def process(params,with_predict=True,with_eval=True):
         #    testset = open(common.DATASETS_DIR+'/train_data/index_test_%s_%s.tsv' % (metadata_source,config.dataset_settings["dataset"])).read().splitlines()
         #else:
         #    testset=open(common.DATASETS_DIR+'/testset_%s.tsv' % config.dataset_settings["dataset"]).read().splitlines()
-        if config.training_params["val_from_file"]:
+        if config.training_params["val_from_file"] and not only_metadata:
             factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source, with_patches=True)
         else:
             factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source)
@@ -492,7 +532,7 @@ def process(params,with_predict=True,with_eval=True):
         print("Factors created")
 
     if with_eval:
-        do_eval(trained_model["model_id"],get_roc=False,get_map=True,get_p=False,factors=factors,factors_index=factors_index)
+        do_eval(trained_model["model_id"],get_roc=True,get_map=True,get_p=True,factors=factors,factors_index=factors_index)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

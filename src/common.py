@@ -5,25 +5,25 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Files and extensions
-DATA_DIR = "/mnt/shared/deep_learning/onieto/ismir_tartarus"
+DATA_DIR = "/homedtic/soramas/text-tartarus/data"
 DEFAULT_TRAINED_MODELS_FILE = DATA_DIR+"/trained_models.tsv"
 DEFAULT_MODEL_PREFIX = "model_"
-MODELS_DIR = DATA_DIR + "/models"
-PATCHES_DIR = DATA_DIR + "/patches"
-DATASETS_DIR = DATA_DIR + "/datasets"
-TRAINDATA_DIR = DATA_DIR + "/datasets/train_data"
-FACTORS_DIR = DATA_DIR + "/factors"
-REC_DIR = DATA_DIR + "/playlists"
-HIVE_DIR = DATA_DIR + "/hive"
+MODELS_DIR = DATA_DIR+"/models"
+PATCHES_DIR = DATA_DIR+"/patches"
+DATASETS_DIR = DATA_DIR+"/datasets"
+TRAINDATA_DIR = DATA_DIR+"/datasets/train_data"
+FACTORS_DIR = DATA_DIR+"/factors"
+REC_DIR = DATA_DIR+"/playlists"
+HIVE_DIR = DATA_DIR+"/hive"
 MODEL_EXT = ".json"
 PLOT_EXT = ".png"
 WEIGHTS_EXT = ".h5"
 MAX_N_SCALER = 300000
 
-# create spectrograms folders
-SPECTRO_PATH = DATA_DIR + "/spectrograms/"
-AUDIO_PATH = "/mnt/shared/deep_learning/onieto/msd/msd/mp3/"
-INDEX_PATH = DATA_DIR + "/index/"
+#create spectrograms folders
+SPECTRO_PATH = DATA_DIR+"/spectrograms/"
+AUDIO_PATH = "/homedtic/soramas/msd/audio/mp3/"
+INDEX_PATH = DATA_DIR+"/index/"
 
 
 def ensure_dir(directory):

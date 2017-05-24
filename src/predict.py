@@ -22,6 +22,8 @@ from scipy.sparse import csr_matrix
 import json
 import h5py
 import common
+from music_tagger_crnn import MusicTaggerCRNN
+
 #import librosa
 #import theano
 
@@ -238,8 +240,10 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
     """Evaluates the model across the whole dataset."""
     # Read the pre-trained model
     agg_method="mean"
+    print(model_id)
     if not model:
         model = read_model(model_config)
+
     factors = dict()
     params = eval(model_config["dataset_settings"][0])
     params_training = eval(model_config["training_params"][0])
@@ -262,6 +266,8 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))[:,:int(sequence_length)]
         elif 'model' in metadata_source or not params['sparse']:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))
+            print ("meta1",all_X_meta.shape)
+            print (metadata_source)
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source,dataset_name)).toarray()
 
@@ -272,8 +278,23 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
                 all_X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))[:,:int(sequence_length)]
             elif 'model' in metadata_source or not params['sparse']:
                 all_X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))
+                print ("meta2",all_X_meta2.shape)
+                print (metadata_source2)
             else:
                 all_X_meta2 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source2,dataset_name)).toarray()
+            #all_X_meta = [all_X_meta,all_X_meta2]
+
+        if 'meta-suffix3' in params:
+            metadata_source3 = params['meta-suffix3']
+            if 'w2v' in metadata_source3:
+                sequence_length = eval(model_config["model_arch"][0])["sequence_length"]
+                all_X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))[:,:int(sequence_length)]
+            elif 'model' in metadata_source or not params['sparse']:
+                all_X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))
+                print ("meta3",all_X_meta3.shape)
+                print (metadata_source3)
+            else:
+                all_X_meta3 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source3,dataset_name)).toarray()
             #all_X_meta = [all_X_meta,all_X_meta2]
 
         index_meta = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
@@ -307,8 +328,12 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
         N_train = all_X_meta.shape[0]
         print(params['dataset'])
         for i in range(0,N_train,block_step):
-            if 'meta-suffix2' in params:
+            if 'meta-suffix3' in params:
+                x_block = [all_X_meta[i:min(N_train,i+block_step)],all_X_meta2[i:min(N_train,i+block_step)],all_X_meta3[i:min(N_train,i+block_step)]]
+                print(len(x_block))
+            elif 'meta-suffix2' in params:
                 x_block = [all_X_meta[i:min(N_train,i+block_step)],all_X_meta2[i:min(N_train,i+block_step)]]
+                print(len(x_block))
             else:
                 x_block = all_X_meta[i:min(N_train,i+block_step)]
             if output_layer == -1:    

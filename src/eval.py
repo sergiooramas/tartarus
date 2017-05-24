@@ -143,6 +143,7 @@ def do_process_map(i,K,mapk):
 
 def do_process(i,predicted_row,actual_row,ks,p,ndcg,adiv):
     rank = np.argsort(predicted_row)[::-1]
+    #print rank[:ks[-1]]
     pred = np.asarray(actual_row[rank[:ks[-1]]]).reshape(-1)
     for j,k in enumerate(ks):
         p[j][i] += precision_at_k(pred,k)
@@ -313,17 +314,20 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
         print 'ROC-AUC',roc_auc
         if not batch:
             fw.write('ROC-AUC: %.5f\n' % roc_auc)
-
+        pr_auc = average_precision_score(actual_matrix_roc,predicted_matrix_roc)
+        print 'PR-AUC',pr_auc
+        if not batch:
+            fw.write('PR-AUC: %.5f\n' % pr_auc)
 
     # P@k
     if get_p:
         ks = [1,3,5]
         folder = tempfile.mkdtemp()
-        p = np.memmap(os.path.join(folder, 'p'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[1]), mode='w+')
-        adiv = np.memmap(os.path.join(folder, 'adiv'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[0]), mode='w+')
-        ndcg = np.memmap(os.path.join(folder, 'ndcg'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[1]), mode='w+')
-        Parallel(n_jobs=20)(delayed(do_process)(i,predicted_matrix_map[:,i],actual_matrix_map[:,i],ks,p,ndcg,adiv)
-                               for i in range(0,predicted_matrix_map.shape[1]))
+        p = np.memmap(os.path.join(folder, 'p'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[0]), mode='w+')
+        adiv = np.memmap(os.path.join(folder, 'adiv'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[1]), mode='w+')
+        ndcg = np.memmap(os.path.join(folder, 'ndcg'), dtype='f',shape=(len(ks),predicted_matrix_map.shape[0]), mode='w+')
+        Parallel(n_jobs=20)(delayed(do_process)(i,predicted_matrix_map[i,:],actual_matrix_map[i,:],ks,p,ndcg,adiv)
+                               for i in range(0,predicted_matrix_map.shape[0]))
         line_p=[]
         line_n=[]
         line_a=[]
@@ -350,7 +354,8 @@ def evaluate(model_id,model_settings,str_config,factors,factors_index,binary_cla
         fw.write(str_config)
         fw.write('\n')
         fw.close()
-
+    print model_id
+    
 def do_eval(model_id, get_roc=False, get_map=False, get_p=False, start_user=0, num_users=10000, batch=False, factors=[], factors_index=[], meta=""):
     if 'model' not in model_id:
         items = model_id.split('_')

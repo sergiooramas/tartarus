@@ -21,7 +21,7 @@ def add_extra_params(params,extra_params):
                 params[t1][t2] = v
             print t1,t2,params[t1][t2]
 
-def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_params=''):
+def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix3='bow', extra_params=''):
     params = dict()
     #Class experiment w2v
     nparams = copy.deepcopy(models.params_82)
@@ -205,11 +205,12 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     params['audio_genre'] = copy.deepcopy(nparams)
 
     #Audio Multilabel experiment
-    nparams = copy.deepcopy(models.params_13) # 5 tartarus 13 keunwoo
+    nparams = copy.deepcopy(models.params_5) # 5 tartarus 13 keunwoo
     nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
     nparams["dataset"]["fact"] = 'class'
     nparams["dataset"]["dim"] = 250
     nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["window"] = 29 # CRNN
     nparams["dataset"]["nsamples"] = 'all'
     nparams["dataset"]["dataset"] = 'multi2deT'
     nparams["training"]["optimizer"] = 'adam'
@@ -220,12 +221,37 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["only_metadata"] = False
     nparams["dataset"]["configuration"] = suffix
     # Our architecture
-    nparams["cnn"]["architecture"] = '13' # 5 tartarus / 13 keunwoo
-    #nparams["cnn"]["n_filters_1"] = 256 # comentar estos para 13
-    #nparams["cnn"]["n_filters_2"] = 512
-    #nparams["cnn"]["n_filters_3"] = 1024
-    #nparams["cnn"]["n_filters_4"] = 1024
-    #nparams["cnn"]["n_pool_3"] = (4,1)
+    nparams["cnn"]["architecture"] = '15' # 5 tartarus / 15 keunwoo
+    # Jordi
+    #nparams["cnn"]["n_kernel_1"] = (4,70)
+    #nparams["cnn"]["n_kernel_2"] = (4,6)
+    #nparams["cnn"]["n_pool_1"] = (4,4)
+    # Keun
+    nparams["cnn"]["n_kernel_1"] = (3,3)
+    nparams["cnn"]["n_kernel_2"] = (3,3)
+    nparams["cnn"]["n_kernel_3"] = (3,3)
+    nparams["cnn"]["n_kernel_4"] = (3,3)
+    nparams["cnn"]["n_kernel_5"] = (3,3)
+    nparams["cnn"]["n_pool_1"] = (2,4)
+    nparams["cnn"]["n_pool_2"] = (2,4)
+    nparams["cnn"]["n_pool_3"] = (2,4)
+    nparams["cnn"]["n_pool_4"] = (4,1)
+    nparams["cnn"]["n_pool_5"] = (4,1)
+    nparams["cnn"]["dropout_factor"] = 0.0
+    # Ours
+    nparams["cnn"]["n_pool_3"] = (4,1)
+    # High
+    nparams["cnn"]["n_filters_1"] = 256
+    nparams["cnn"]["n_filters_2"] = 512
+    nparams["cnn"]["n_filters_3"] = 1024
+    nparams["cnn"]["n_filters_4"] = 1024
+    nparams["cnn"]["n_filters_5"] = 0
+    # Low
+    #nparams["cnn"]["n_filters_1"] = 64
+    #nparams["cnn"]["n_filters_2"] = 128
+    #nparams["cnn"]["n_filters_3"] = 128
+    #nparams["cnn"]["n_filters_4"] = 64
+    #nparams["cnn"]["n_filters_5"] = 0
 
     #nparams["cnn"]["n_dense"] = 2048
     nparams["cnn"]["final_activation"] = 'sigmoid'
@@ -248,17 +274,148 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["with_metadata"] = False
     nparams["dataset"]["only_metadata"] = False
     nparams["dataset"]["configuration"] = suffix
-    nparams["cnn"]["architecture"] = '13'
+    nparams["cnn"]["architecture"] = '5' # 5 tartarus / 13 keunwoo
+    # Jordi
+    #nparams["cnn"]["n_kernel_1"] = (4,70)
+    #nparams["cnn"]["n_kernel_2"] = (4,6)
+    #nparams["cnn"]["n_pool_1"] = (4,4)
+    # Keun
+    nparams["cnn"]["n_kernel_1"] = (3,3)
+    nparams["cnn"]["n_kernel_2"] = (3,3)
+    nparams["cnn"]["n_kernel_3"] = (3,3)
+    nparams["cnn"]["n_kernel_4"] = (3,3)
+    nparams["cnn"]["n_kernel_5"] = (3,3)
+    nparams["cnn"]["n_pool_1"] = (2,4)
+    nparams["cnn"]["n_pool_2"] = (2,4)
+    nparams["cnn"]["n_pool_3"] = (2,4)
+    nparams["cnn"]["n_pool_4"] = (4,1)
+    nparams["cnn"]["n_pool_5"] = (4,1)
+    nparams["cnn"]["dropout_factor"] = 0.0
+    # Ours
+    nparams["cnn"]["n_pool_3"] = (4,1)
+    # High
     nparams["cnn"]["n_filters_1"] = 256
     nparams["cnn"]["n_filters_2"] = 512
     nparams["cnn"]["n_filters_3"] = 1024
     nparams["cnn"]["n_filters_4"] = 1024
-    nparams["cnn"]["n_pool_3"] = (4,1)
+    nparams["cnn"]["n_filters_5"] = 0
+    # Low
+    #nparams["cnn"]["n_filters_1"] = 64
+    #nparams["cnn"]["n_filters_2"] = 128
+    #nparams["cnn"]["n_filters_3"] = 128
+    #nparams["cnn"]["n_filters_4"] = 64
+    #nparams["cnn"]["n_filters_5"] = 0
+    
     #nparams["cnn"]["n_dense"] = 2048
     nparams["cnn"]["final_activation"] = 'linear'
     nparams["dataset"]["meta-suffix"] = ""
     add_extra_params(nparams, extra_params)
     params['audio_fact_multilabel'] = copy.deepcopy(nparams)
+
+
+    #Audio Multilabel experiment with new Jordi multi-filters
+    nparams = copy.deepcopy(models.params_5)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["dim"] = 50
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deT'
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["with_metadata"] = False
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["cnn"]["architecture"] = '51' # 5 tartarus / 13 keunwoo
+    # Jordi
+    #nparams["cnn"]["n_kernel_1"] = (4,70)
+    #nparams["cnn"]["n_kernel_2"] = (4,6)
+    #nparams["cnn"]["n_pool_1"] = (4,4)
+    # Jordi multi-filter
+    nparams["cnn"]["n_pool_1"] = (4,16)
+    nparams["cnn"]["n_kernel_2"] = (4,6)
+    # Keun
+    #nparams["cnn"]["n_kernel_1"] = (3,3)
+    #nparams["cnn"]["n_kernel_2"] = (3,3)
+    #nparams["cnn"]["n_kernel_3"] = (3,3)
+    #nparams["cnn"]["n_kernel_4"] = (3,3)
+    #nparams["cnn"]["n_kernel_5"] = (3,3)
+    #nparams["cnn"]["n_pool_1"] = (2,4)
+    #nparams["cnn"]["n_pool_2"] = (2,4)
+    #nparams["cnn"]["n_pool_3"] = (2,4)
+    #nparams["cnn"]["n_pool_4"] = (4,1)
+    #nparams["cnn"]["n_pool_5"] = (4,1)
+    nparams["cnn"]["dropout_factor"] = 0.0
+    # Ours
+    nparams["cnn"]["n_pool_3"] = (4,1)
+    # High
+    nparams["cnn"]["n_filters_1"] = 256
+    nparams["cnn"]["n_filters_2"] = 512
+    nparams["cnn"]["n_filters_3"] = 1024
+    nparams["cnn"]["n_filters_4"] = 1024
+    nparams["cnn"]["n_filters_5"] = 0
+    # Low
+    #nparams["cnn"]["n_filters_1"] = 64
+    #nparams["cnn"]["n_filters_2"] = 128
+    #nparams["cnn"]["n_filters_3"] = 128
+    #nparams["cnn"]["n_filters_4"] = 64
+    #nparams["cnn"]["n_filters_5"] = 0
+    
+    #nparams["cnn"]["n_dense"] = 2048
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["meta-suffix"] = ""
+    add_extra_params(nparams, extra_params)
+    params['audio_fact_multilabel_jordi'] = copy.deepcopy(nparams)
+
+
+
+    # MLP fact
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 50
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '81'
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    add_extra_params(nparams, extra_params)
+    params['mlp_fact'] = copy.deepcopy(nparams)
+
+    # MLP class
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 250
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '81'
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    add_extra_params(nparams, extra_params)
+    params['mlp_class'] = copy.deepcopy(nparams)
 
     #Multimodal experiment bow
     nparams = copy.deepcopy(models.params_6)
@@ -331,6 +488,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["meta-suffix"] = meta_suffix #bow
     add_extra_params(nparams, extra_params)
     params['multi_fact'] = copy.deepcopy(nparams)
+
 
 
     #Fact multimodal bi metadata input
@@ -440,13 +598,15 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams = copy.deepcopy(models.params_82)
     nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
     nparams["dataset"]["fact"] = 'class'
-    nparams["dataset"]["dim"] = 419
+    #nparams["dataset"]["dim"] = 419 # Freesound
+    nparams["dataset"]["dim"] = 250 # multi2de
     nparams["dataset"]["npatches"] = 1
     nparams["dataset"]["nsamples"] = 'all'
-    nparams["dataset"]["dataset"] = 'fsd-m'
+    #nparams["dataset"]["dataset"] = 'fsd-m'
+    nparams["dataset"]["dataset"] = 'multi2deR'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = False
-    nparams["training"]["val_from_file"] = False
+    nparams["training"]["val_from_file"] = True
     nparams["training"]["loss_func"] = 'binary_crossentropy'
     nparams["dataset"]["with_metadata"] = True
     nparams["dataset"]["only_metadata"] = True
@@ -454,13 +614,97 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
     nparams["dataset"]["meta-suffix"] = meta_suffix #bow
     nparams["dataset"]["configuration"] = suffix
     nparams["cnn"]["architecture"] = '82' # 5
-    nparams["cnn"]["sequence_length"] = 10
+    #nparams["cnn"]["sequence_length"] = 10 #Freesound
+    nparams["cnn"]["sequence_length"] = 300
     nparams["cnn"]["embedding_dim"] = 300
-    nparams["cnn"]["n_dense"] = 512
-    nparams["cnn"]["filter_sizes"] = (1,)
+    nparams["cnn"]["n_dense"] = 300
+    nparams["cnn"]["filter_sizes"] = (2,3)
     nparams["cnn"]["final_activation"] = 'sigmoid'
     add_extra_params(nparams, extra_params)
-    params['w2v_multilabel'] = copy.deepcopy(nparams)    
+    params['w2v_class_multilabel'] = copy.deepcopy(nparams)    
+
+    #w2v fact multilabel
+    nparams = copy.deepcopy(models.params_82)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    #nparams["dataset"]["dim"] = 419 # Freesound
+    nparams["dataset"]["dim"] = 50 # multi2de
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["nsamples"] = 'all'
+    #nparams["dataset"]["dataset"] = 'fsd-m'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["configuration"] = suffix
+    nparams["cnn"]["architecture"] = '82' # 5
+    #nparams["cnn"]["sequence_length"] = 10 #Freesound
+    nparams["cnn"]["sequence_length"] = 300
+    nparams["cnn"]["embedding_dim"] = 300
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["filter_sizes"] = (3,8)
+    nparams["cnn"]["final_activation"] = 'linear'
+    add_extra_params(nparams, extra_params)
+    params['w2v_fact_multilabel'] = copy.deepcopy(nparams)   
+
+    #bow multilabel experiment freesound
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    #nparams["dataset"]["dim"] = 419 # Freesound
+    nparams["dataset"]["dim"] = 250 # multi2de
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["nsamples"] = 'all'
+    #nparams["dataset"]["dataset"] = 'fsd-m'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["sparse"] = True
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["configuration"] = suffix
+    nparams["cnn"]["architecture"] = '8' # 5
+    #nparams["cnn"]["sequence_length"] = 10 #Freesound
+    #nparams["cnn"]["sequence_length"] = 300
+    #nparams["cnn"]["embedding_dim"] = 300
+    #nparams["cnn"]["n_dense"] = 512
+    #nparams["cnn"]["filter_sizes"] = (3,8)
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    add_extra_params(nparams, extra_params)
+    params['bow_class_multilabel'] = copy.deepcopy(nparams) 
+
+
+    #bow multilabel experiment
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    #nparams["dataset"]["dim"] = 419 # Freesound
+    nparams["dataset"]["dim"] = 50 # multi2de
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["training"]["val_from_file"] = True
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["sparse"] = True
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["configuration"] = suffix
+    nparams["cnn"]["dropout_factor"] = 0.3
+    nparams["cnn"]["architecture"] = '8' # 5
+    nparams["cnn"]["final_activation"] = 'linear'
+    add_extra_params(nparams, extra_params)
+    params['bow_fact_multilabel'] = copy.deepcopy(nparams) 
 
     #bow multiclass experiment freesound
     nparams = copy.deepcopy(models.params_6)
@@ -518,29 +762,111 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', extra_param
 
     #Fact multimodal bi metadata input
     nparams = copy.deepcopy(models.params_6)
-    nparams["dataset"]["evaluation"] = 'multiclass' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
     nparams["dataset"]["fact"] = 'class'
     nparams["dataset"]["npatches"] = 1
     nparams["dataset"]["with_metadata"] = True
     nparams["dataset"]["only_metadata"] = True
     nparams["dataset"]["configuration"] = suffix
     nparams["dataset"]["sparse"] = False
-    nparams["training"]["val_from_file"] = False
-    nparams["dataset"]["dim"] = 397
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 250 #397
     nparams["training"]["loss_func"] = 'binary_crossentropy'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = False
     nparams["cnn"]["architecture"] = '813'
     nparams["cnn"]["n_dense"] = 512
-    nparams["cnn"]["dropout_factor"] = 0.7
-    nparams["cnn"]["final_activation"] = 'softmax'
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'sigmoid'
     nparams["dataset"]["nsamples"] = 'all'
-    nparams["dataset"]["dataset"] = 'fsd'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
     nparams["dataset"]["meta-suffix"] = meta_suffix #bow
     nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
-    nparams["cnn"]["n_metafeatures2"] = 2048
+    #nparams["cnn"]["n_metafeatures2"] = 256
     add_extra_params(nparams, extra_params)
-    params['multi_genre_bi_multiclass'] = copy.deepcopy(nparams)
+    params['multi_bi_class_multilabel'] = copy.deepcopy(nparams)
+
+    #Fact multimodal bi metadata input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 50 #397
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '813'
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    #nparams["cnn"]["n_metafeatures2"] = 256
+    add_extra_params(nparams, extra_params)
+    params['multi_bi_fact_multilabel'] = copy.deepcopy(nparams)    
+
+
+    #Fact multimodal bi metadata input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 250 #397
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '814'
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3 #bow
+    #nparams["cnn"]["n_metafeatures2"] = 256
+    add_extra_params(nparams, extra_params)
+    params['multi_tri_class_multilabel'] = copy.deepcopy(nparams)
+
+    #Fact multimodal bi metadata input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 50 #397
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '814'
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'multi2deA2'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3 #bow
+    #nparams["cnn"]["n_metafeatures2"] = 256
+    add_extra_params(nparams, extra_params)
+    params['multi_tri_fact_multilabel'] = copy.deepcopy(nparams)   
+
     '''
     #Multimodal experiment
     nparams = params_6.copy()
@@ -604,10 +930,11 @@ if __name__ == '__main__':
     parser.add_argument('suffix', default="class_bow", help='Suffix of experiment params')
     parser.add_argument('meta_suffix', nargs='?', default="", help='Suffix of input matrix for experiment')
     parser.add_argument('meta_suffix2', nargs='?', default="", help='Suffix of input matrix for experiment')
+    parser.add_argument('meta_suffix3', nargs='?', default="", help='Suffix of input matrix for experiment')
     parser.add_argument('extra_params', nargs='?', default="", help='Specific extra parameters')
     args = parser.parse_args()
     print args.extra_params
-    params = get_configuration(args.suffix,args.meta_suffix,args.meta_suffix2,args.extra_params)
+    params = get_configuration(args.suffix,args.meta_suffix,args.meta_suffix2,args.meta_suffix3,args.extra_params)
     process(params)
     # Tartarus Experiment
 
