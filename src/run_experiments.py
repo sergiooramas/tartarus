@@ -928,7 +928,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     nparams["dataset"]["evaluation"] = 'multilabel' # 
     nparams["dataset"]["fact"] = 'class'
     nparams["dataset"]["npatches"] = 1
-    nparams["dataset"]["dim"] = 300
+    nparams["dataset"]["dim"] = 492
     nparams["dataset"]["with_metadata"] = True
     nparams["dataset"]["only_metadata"] = True
     nparams["dataset"]["configuration"] = suffix
