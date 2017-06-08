@@ -22,7 +22,7 @@ from scipy.sparse import csr_matrix
 import json
 import h5py
 import common
-from music_tagger_crnn import MusicTaggerCRNN
+#from music_tagger_crnn import MusicTaggerCRNN
 
 #import librosa
 #import theano
