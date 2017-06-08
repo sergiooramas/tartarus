@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Files and extensions
-DATA_DIR = "/homedtic/soramas/text-tartarus/data"
+DATA_DIR = "/homedtic/xfavory/tartarus/data"
 DEFAULT_TRAINED_MODELS_FILE = DATA_DIR+"/trained_models.tsv"
 DEFAULT_MODEL_PREFIX = "model_"
 MODELS_DIR = DATA_DIR+"/models"
@@ -22,7 +22,7 @@ MAX_N_SCALER = 300000
 
 #create spectrograms folders
 SPECTRO_PATH = DATA_DIR+"/spectrograms/"
-AUDIO_PATH = "/homedtic/soramas/msd/audio/mp3/"
+AUDIO_PATH = "/homedtic/xfavory/msd/audio/mp3/"
 INDEX_PATH = DATA_DIR+"/index/"
 
 
