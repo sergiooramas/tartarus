@@ -938,7 +938,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     nparams["cnn"]["architecture"] = '81'
     nparams["dataset"]["nsamples"] = 'all'
     nparams["dataset"]["dataset"] = 'fsd'
-    nparams['dataset']['sparse'] = True
+    nparams['dataset']['sparse'] = False
     nparams["dataset"]["meta-suffix"] = meta_suffix #bow
     nparams["cnn"]["final_activation"] = 'sigmoid'
     nparams["training"]["val_from_file"] = False
