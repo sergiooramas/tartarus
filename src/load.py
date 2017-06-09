@@ -72,6 +72,9 @@ def load_X(args):
     output_suffix_X = '%s_%sx%s' % (args.dataset,args.npatches,args.window)
     scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s.pk' % output_suffix_X
     X,scaler = scale(X)
+    sys.stdout.write(X)
+    sys.stdout.write(np.sum(X, axis=0))
+    sys.stdout.write(np.sum(X, axis=1))
     pickle.dump(scaler,open(scaler_file,'wb'))
     X_file = common.DATASETS_DIR+'/train_data/X_train_'+output_suffix_X
     np.save(X_file,X)
