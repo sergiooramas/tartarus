@@ -114,9 +114,6 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
         elif 'model' in metadata_source or not params['dataset']['sparse']:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
-            logging.debug("X: \n")
-            logging.debug(np.sum(all_X_meta,axis=0))
-            logging.debug(0 in np.sum(all_X_meta,axis=1))
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
 
@@ -173,6 +170,30 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
                 X_val = [X_val,all_X_in_meta[N_train:N_train + N_val]]
                 X_test = [X_test,all_X_in_meta[N_train + N_val:]]
 
+    logging.debug("X train:")
+    logging.debug(np.sum(X_train,axis=0))
+    logging.debug(0 in np.sum(X_train,axis=1))
+    
+    logging.debug("Y train: \n")
+    logging.debug(np.sum(Y_train,axis=0))
+    logging.debug(0 in np.sum(Y_train,axis=1))
+    
+    logging.debug("X val: \n")
+    logging.debug(np.sum(X_val,axis=0))
+    logging.debug(0 in np.sum(X_val,axis=1))
+    
+    logging.debug("Y val: \n")
+    logging.debug(np.sum(Y_val,axis=0))
+    logging.debug(0 in np.sum(Y_val,axis=1))
+    
+    logging.debug("X test: \n")
+    logging.debug(np.sum(X_test,axis=0))
+    logging.debug(0 in np.sum(X_test,axis=1))
+    
+    logging.debug("Y test: \n")
+    logging.debug(np.sum(Y_test,axis=0))
+    logging.debug(0 in np.sum(Y_test,axis=1))
+    
     return X_train, Y_train, X_val, Y_val, X_test, Y_test
 
 def single_file_generator(params, y_path):
