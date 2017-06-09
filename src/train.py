@@ -170,30 +170,6 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
                 X_val = [X_val,all_X_in_meta[N_train:N_train + N_val]]
                 X_test = [X_test,all_X_in_meta[N_train + N_val:]]
 
-    logging.debug("X train:")
-    logging.debug(np.sum(X_train,axis=0))
-    logging.debug(0 in np.sum(X_train,axis=1))
-    
-    logging.debug("Y train: \n")
-    logging.debug(np.sum(Y_train,axis=0))
-    logging.debug(0 in np.sum(Y_train,axis=1))
-    
-    logging.debug("X val: \n")
-    logging.debug(np.sum(X_val,axis=0))
-    logging.debug(0 in np.sum(X_val,axis=1))
-    
-    logging.debug("Y val: \n")
-    logging.debug(np.sum(Y_val,axis=0))
-    logging.debug(0 in np.sum(Y_val,axis=1))
-    
-    logging.debug("X test: \n")
-    logging.debug(np.sum(X_test,axis=0))
-    logging.debug(0 in np.sum(X_test,axis=1))
-    
-    logging.debug("Y test: \n")
-    logging.debug(np.sum(Y_test,axis=0))
-    logging.debug(0 in np.sum(Y_test,axis=1))
-    
     return X_train, Y_train, X_val, Y_val, X_test, Y_test
 
 def single_file_generator(params, y_path):

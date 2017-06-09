@@ -945,6 +945,30 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     add_extra_params(nparams, extra_params)
     params['class_bow_xavier'] = copy.deepcopy(nparams)
     
+    
+    #XAVIER
+    #Class experiment bow DATA SERGIO
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # 
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 397
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '81'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'fsd2'
+    nparams['dataset']['sparse'] = True
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["training"]["val_from_file"] = False
+    add_extra_params(nparams, extra_params)
+    params['class_bow_xavier_s'] = copy.deepcopy(nparams)
+    
     return params[suffix]
 
 if __name__ == '__main__':
