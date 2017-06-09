@@ -100,6 +100,7 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
     index_factors = open(common.DATASETS_DIR+'/items_index_train_'+dataset+'.tsv').read().splitlines()
     if not only_metadata:
         all_X = np.load(common.DATASETS_DIR+'/train_data/X_train_'+X_path+'.npy')
+        logging.debug(all_X)
         index_train = open(common.DATASETS_DIR+'/train_data/index_train_%s.tsv' % (X_path)).read().splitlines()
         all_Y = np.zeros((len(index_train),factors.shape[1]))
         index_factors_inv = dict()
