@@ -114,7 +114,9 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
         elif 'model' in metadata_source or not params['dataset']['sparse']:
             all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
-            logging.debug(all_X_meta)
+            logging.debug("X: \n")
+            logging.debug(np.sum(all_X_meta,axis=0))
+            logging.debug(0 in np.sum(all_X_meta,axis=1))
         else:
             all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
 
