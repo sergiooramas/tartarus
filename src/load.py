@@ -7,7 +7,6 @@ import pandas as pd
 import pickle
 from sklearn.preprocessing import StandardScaler, normalize
 import sys
-import logging
 
 import common
 
@@ -73,9 +72,6 @@ def load_X(args):
     output_suffix_X = '%s_%sx%s' % (args.dataset,args.npatches,args.window)
     scaler_file=common.DATASETS_DIR+'/train_data/scaler_%s.pk' % output_suffix_X
     X,scaler = scale(X)
-    logging.debug(X)
-    logging.debug(np.sum(X, axis=0))
-    logging.debug(np.sum(X, axis=1))
     pickle.dump(scaler,open(scaler_file,'wb'))
     X_file = common.DATASETS_DIR+'/train_data/X_train_'+output_suffix_X
     np.save(X_file,X)

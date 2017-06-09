@@ -935,7 +935,7 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     nparams["training"]["loss_func"] = 'binary_crossentropy'
     nparams["training"]["optimizer"] = 'adam'
     nparams["training"]["normalize_y"] = False
-    nparams["cnn"]["architecture"] = '8'
+    nparams["cnn"]["architecture"] = '81'
     nparams["dataset"]["nsamples"] = 'all'
     nparams["dataset"]["dataset"] = 'fsd'
     nparams['dataset']['sparse'] = False
