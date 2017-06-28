@@ -75,7 +75,7 @@ python run_experiments.py rec_sparse sem-bio
 
 For multimodal recommendation:
 
-python run_experiments.py rec_multi a-sem-bio audio-emb
+python run_experiments.py rec_multi a-sem-emb audio-emb
 
-
+More approaches from the paper can be tested modifying the configuration inside run_experiments.py
 
