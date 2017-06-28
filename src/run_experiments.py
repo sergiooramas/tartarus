@@ -23,6 +23,85 @@ def add_extra_params(params,extra_params):
 
 def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix3='bow', extra_params=''):
     params = dict()
+
+    #DLRS Experiments
+
+    #Regression experiment with sparse matrices as input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'recommendation' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'als'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 200
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = True
+    nparams["training"]["val_from_file"] = False
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '8'
+    nparams["cnn"]["n_dense"] = 2048
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MSD-A-artists'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["cnn"]["final_activation"] = 'linear'
+    add_extra_params(nparams, extra_params)
+    params['rec_sparse'] = copy.deepcopy(nparams)
+
+    #Regression experiment with dense matrices as input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'recommendation' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'als'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["dim"] = 200
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = True
+    nparams["training"]["val_from_file"] = False
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '8'
+    nparams["cnn"]["n_dense"] = 2048
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MSD-A-artists' #MSD-A-songs for song rec
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["cnn"]["final_activation"] = 'linear'
+    add_extra_params(nparams, extra_params)
+    params['rec_dense'] = copy.deepcopy(nparams)
+
+    #Fact multimodal bi metadata input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'recommendation' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'als'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = False
+    nparams["dataset"]["dim"] = 200 #397
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '813'
+    nparams["cnn"]["n_dense"] = 512
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MSD-A-songs'
+    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    #nparams["cnn"]["n_metafeatures2"] = 256
+    add_extra_params(nparams, extra_params)
+    params['rec_multi'] = copy.deepcopy(nparams)      
+
+
+
+    # Other experiments
+
     #Class experiment w2v
     nparams = copy.deepcopy(models.params_82)
     nparams["dataset"]["fact"] = 'class'

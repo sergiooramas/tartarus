@@ -1,4 +1,6 @@
-Deep Learning for Audio and Text
+# Tartarus
+
+Tartarus is a library for Deep Learning experiments on Audio and Text and their combination
 
 To use this library you need to create a folder structure as follows
 
@@ -60,3 +62,20 @@ To run experiments you can simply excecute the run_experiments.py script, passin
 You can also run train, prediction and evaluation separately.
 
 It is possible to obtain a specific layer prediction output from predict.py by using the -l parameter.
+
+## DLRS Experiments
+
+To reproduce the experiments in the Cold-start recommendation paper, you have to download the dataset from and untar it in the /tartarus folder.
+
+Then you can run the experiments by calling run_experiments.py, for example:
+
+For artist recommendation:
+
+python run_experiments.py rec_sparse sem-bio
+
+For multimodal recommendation:
+
+python run_experiments.py rec_multi a-sem-bio audio-emb
+
+
+

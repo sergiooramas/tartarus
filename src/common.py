@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Files and extensions
-DATA_DIR = "/homedtic/soramas/text-tartarus/data"
+DATA_DIR = "/homedtic/soramas/tartarus/data"
 DEFAULT_TRAINED_MODELS_FILE = DATA_DIR+"/trained_models.tsv"
 DEFAULT_MODEL_PREFIX = "model_"
 MODELS_DIR = DATA_DIR+"/models"
@@ -14,7 +14,6 @@ DATASETS_DIR = DATA_DIR+"/datasets"
 TRAINDATA_DIR = DATA_DIR+"/datasets/train_data"
 FACTORS_DIR = DATA_DIR+"/factors"
 REC_DIR = DATA_DIR+"/playlists"
-HIVE_DIR = DATA_DIR+"/hive"
 MODEL_EXT = ".json"
 PLOT_EXT = ".png"
 WEIGHTS_EXT = ".h5"
