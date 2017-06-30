@@ -69,6 +69,8 @@ It is possible to obtain a specific layer prediction output from predict.py by u
 
 To reproduce the experiments in the Cold-start recommendation paper, you have to download the dataset from and untar it in the /tartarus folder.
 
+Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
+
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, learned feature embeddings, and models.
 
 https://drive.google.com/file/d/0B-oq_x72w8NUNXJDejJIQzQtaGc/view?usp=sharing
