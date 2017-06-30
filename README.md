@@ -2,6 +2,8 @@
 
 Tartarus is a library for Deep Learning experiments on Audio and Text and their combination
 
+Requirements: This library works with keras 1.1.0
+
 To use this library you need to create a folder structure as follows
 
 /tartarus
