@@ -87,3 +87,4 @@ python run_experiments.py rec_multi a-sem-emb audio-emb
 
 More approaches from the paper can be tested modifying the configuration inside run_experiments.py
 
+Full dataset description http://mtg.upf.edu/download/datasets/msd-a
