@@ -75,7 +75,7 @@ Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for 
 
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, learned feature embeddings, and models.
 
-    https://drive.google.com/file/d/0B-oq_x72w8NUNXJDejJIQzQtaGc/view?usp=sharing
+    https://drive.google.com/file/d/0B-oq_x72w8NUSGFZRzJmQXhYSlE/view?usp=sharing
 
 Then you can run the experiments by calling `run_experiments.py`, for example:
 
