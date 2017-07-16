@@ -24,7 +24,7 @@ def add_extra_params(params,extra_params):
 def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix3='bow', extra_params=''):
     params = dict()
 
-    #DLRS Experiments
+    #DLRS 2017 Experiments (Recommendation)
 
     #Regression experiment with sparse matrices as input
     nparams = copy.deepcopy(models.params_6)
@@ -92,12 +92,122 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     nparams["cnn"]["final_activation"] = 'linear'
     nparams["dataset"]["nsamples"] = 'all'
     nparams["dataset"]["dataset"] = 'MSD-A-songs'
-    nparams["dataset"]["meta-suffix"] = meta_suffix #bow
-    nparams["dataset"]["meta-suffix2"] = meta_suffix2 #bow
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
     #nparams["cnn"]["n_metafeatures2"] = 256
     add_extra_params(nparams, extra_params)
     params['rec_multi'] = copy.deepcopy(nparams)      
 
+
+    # ISMIR 2017 Multimodal Experiments (Classification)
+
+    #LOGISTIC multimodal two feature vectors input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 250
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '813'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MuMu-albums'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    add_extra_params(nparams, extra_params)
+    params['logistic_multilabel_bi'] = copy.deepcopy(nparams)
+
+    #COSINE multimodal two feature vectors input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 50
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '813'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MuMu-albums'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    add_extra_params(nparams, extra_params)
+    params['cosine_multilabel_bi'] = copy.deepcopy(nparams)    
+
+
+    #LOGISTIC multimodal three feature vectors input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 250 #397
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '814'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.0
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MuMu-albums'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    add_extra_params(nparams, extra_params)
+    params['logistic_multilabel_tri'] = copy.deepcopy(nparams)
+
+    #COSINE multimodal three feature vectors input
+    nparams = copy.deepcopy(models.params_6)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'pmi'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 50
+    nparams["training"]["loss_func"] = 'cosine'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = True
+    nparams["cnn"]["architecture"] = '814'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.7
+    nparams["cnn"]["final_activation"] = 'linear'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'MuMu-albums'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    add_extra_params(nparams, extra_params)
+    params['cosine_multilabel_tri'] = copy.deepcopy(nparams)   
+
+
+    # Test experiments
+
+    
 
 
     # Other experiments
