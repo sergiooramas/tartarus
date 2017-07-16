@@ -60,13 +60,13 @@ def do_process(id, audio_file, spectro_file):
 				signal.alarm(50)
 				compute_spec(audio_file,spectro_file)
 			fw = open(common.SPECTRO_PATH+config['spectro_folder']+"index.tsv","a")
-			fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file[len(common.AUDIO_PATH):]))
+			fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file))
 			fw.close()
 			print 'Computed spec: %s' % audio_file
 		else:
 			if os.path.isfile(spectro_file):
 				fw = open(common.SPECTRO_PATH+config['spectro_folder']+"index.tsv","a")
-				fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file[len(common.AUDIO_PATH):]))
+				fw.write("%s\t%s\t%s\n" % (id,spectro_file[len(common.SPECTRO_PATH):],audio_file))
 				fw.close()
 	except Exception as e:
 		ferrors = open(common.SPECTRO_PATH+config['spectro_folder']+"errors.txt","a")
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 			spect = id+".pk"
 		else:
 			spect = audio[:audio.rfind(".")]+".pk"
-		files_to_convert.append((id,common.AUDIO_PATH+config['audio_folder']+audio,common.SPECTRO_PATH+config['spectro_folder']+spect))
+		files_to_convert.append((id,config['audio_folder']+audio,common.SPECTRO_PATH+config['spectro_folder']+spect))
 
 	print str(len(files_to_convert))+' audio files to process!'
 
