@@ -10,7 +10,7 @@ import librosa
 import h5py
 from random import shuffle
 
-SECONDS = 3
+SECONDS = 15
 SR = 22050
 HR = 1024
 N_FRAMES = int(SECONDS * SR / float(HR)) # 10 seconds of audio

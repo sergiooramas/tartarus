@@ -8,7 +8,7 @@ config_spectro = {
 		'spectrogram_type' : 'cqt',
 		'cqt_bins' : 96,
 		'convert_id' : True, # converts the (path) name of a file to its ID name - correspondence in index_file.
-		'index_file' : 'index_SUPER.tsv', # index to be converted. THIS IS THE LIST THAT ONE WILL COMPUTE
+		'index_file' : 'index_audio_SUPER.tsv', # index to be converted. THIS IS THE LIST THAT ONE WILL COMPUTE
 		'audio_ext' : ['mp3'] , # in list form
 		'num_process' : 8,
 		'compute_spectro' : True

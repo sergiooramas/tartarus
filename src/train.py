@@ -5,15 +5,10 @@ import json
 import os
 import logging
 from keras.callbacks import EarlyStopping
-from keras.layers import Dense, Dropout, Activation, Flatten, Permute, Lambda, Input, merge
-from keras.layers import Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D
-from keras.regularizers import l2
-from keras.models import Sequential, Model
-from keras.layers.normalization import BatchNormalization
-from keras.utils.io_utils import HDF5Matrix
-from sklearn.preprocessing import StandardScaler, normalize
+from sklearn.preprocessing import normalize
 from sklearn.metrics import roc_curve, auc, roc_auc_score, precision_score, recall_score, f1_score, accuracy_score, average_precision_score
 from scipy.sparse import csr_matrix
+from keras.utils.io_utils import HDF5Matrix
 #from keras.utils.visualize_util import plot
 from keras.optimizers import SGD, Adam
 from sklearn.metrics import r2_score
@@ -23,15 +18,9 @@ import pandas as pd
 import random
 import common
 import models
-from predict import obtain_factors
+from predict import obtain_predictions
 from eval import do_eval
 import h5py
-
-import keras.backend as K
-import theano
-
-SR = 22050
-HR = 1024
 
 
 class Config(object):
@@ -96,11 +85,11 @@ def build_model(config):
     return model
 
 def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_percent, n_samples, with_metadata=False, only_metadata=False, metadata_source='rovi'):
-    factors = np.load(common.DATASETS_DIR+'/item_factors_train_'+Y_path+'.npy') # OJO remove S
+    factors = np.load(common.DATASETS_DIR+'/y_train_'+Y_path+'.npy') # OJO remove S
     index_factors = open(common.DATASETS_DIR+'/items_index_train_'+dataset+'.tsv').read().splitlines()
     if not only_metadata:
-        all_X = np.load(common.DATASETS_DIR+'/train_data/X_train_'+X_path+'.npy')
-        index_train = open(common.DATASETS_DIR+'/train_data/index_train_%s.tsv' % (X_path)).read().splitlines()
+        all_X = np.load(common.TRAINDATA_DIR+'/X_train_'+X_path+'.npy')
+        index_train = open(common.TRAINDATA_DIR+'/index_train_%s.tsv' % (X_path)).read().splitlines()
         all_Y = np.zeros((len(index_train),factors.shape[1]))
         index_factors_inv = dict()
         for i,item in enumerate(index_factors):
@@ -111,14 +100,13 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
         all_Y = factors
     if with_metadata:
         if 'w2v' in metadata_source:
-            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
+            all_X_meta = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (metadata_source,dataset))[:,:int(params['cnn']['sequence_length'])]
         elif 'model' in metadata_source or not params['dataset']['sparse']:
-            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,dataset))
+            all_X_meta = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (metadata_source,dataset))
         else:
-            all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
+            all_X_meta = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (metadata_source,dataset)).todense()
 
         all_X_in_meta = all_X = all_X_meta
-        print(all_X_in_meta.shape)
 
     print(all_X.shape)
     print(all_Y.shape)
@@ -131,26 +119,26 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
 
     if params['training']['normalize_y'] == True:
         normalize(all_Y,copy=False)
-    N = all_Y.shape[0]
-    train_percent = 1 - val_percent - test_percent
-    N_train = int(train_percent * N)
-    N_val = int(val_percent * N)
-    logging.debug("Training data points: %d" % N_train)
-    logging.debug("Validation data points: %d" % N_val)
-    logging.debug("Test data points: %d" % (N - N_train - N_val))
 
     if params['training']["val_from_file"]:
-        Y_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+Y_path+'.npy')
-        Y_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+Y_path+'.npy') #!!! OJO remove S from trainS
+        Y_val = np.load(common.DATASETS_DIR+'/y_val_'+Y_path+'.npy')
+        Y_test = np.load(common.DATASETS_DIR+'/y_test_'+Y_path+'.npy') #!!! OJO remove S from trainS
         if params['dataset']['sparse']:
-            X_val = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npz' % (metadata_source,dataset)).todense()
-            X_test = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npz' % (metadata_source,dataset)).todense()
+            X_val = load_sparse_csr(common.TRAINDATA_DIR+'/X_val_%s_%s.npz' % (metadata_source,dataset)).todense()
+            X_test = load_sparse_csr(common.TRAINDATA_DIR+'/X_test_%s_%s.npz' % (metadata_source,dataset)).todense()
         else:
-            X_val = np.load(common.DATASETS_DIR+'/train_data/X_val_%s_%s.npy' % (metadata_source,dataset))
-            X_test = np.load(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npy' % (metadata_source,dataset))
+            X_val = np.load(common.TRAINDATA_DIR+'/X_val_%s_%s.npy' % (metadata_source,dataset))
+            X_test = np.load(common.TRAINDATA_DIR+'/X_test_%s_%s.npy' % (metadata_source,dataset))
         X_train = all_X
         Y_train = all_Y
     else:
+        N = all_Y.shape[0]
+        train_percent = 1 - val_percent - test_percent
+        N_train = int(train_percent * N)
+        N_val = int(val_percent * N)
+        logging.debug("Training data points: %d" % N_train)
+        logging.debug("Validation data points: %d" % N_val)
+        logging.debug("Test data points: %d" % (N - N_train - N_val))
         if not only_metadata:
             # Slice data
             X_train = all_X[:N_train]
@@ -171,31 +159,6 @@ def load_data_preprocesed(params, X_path, Y_path, dataset, val_percent, test_per
                 X_test = [X_test,all_X_in_meta[N_train + N_val:]]
 
     return X_train, Y_train, X_val, Y_val, X_test, Y_test
-
-def single_file_generator(params, y_path):
-    items_index = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
-    factors = np.load(common.DATASETS_DIR+'/item_factors_'+y_path+'.npy')
-    f = h5py.File(common.PATCHES_DIR+"/patches_train_%s_15.hdf5" % params['dataset']['dataset'],"r")
-    patches = f["patches"]
-    batch_size = params["training"]["n_minibatch"]
-    items_list = range(int(len(items_index)*0.8))
-    #random.shuffle(items_list)
-    while 1:
-        for i in range(0,len(items_list),batch_size):
-            if i+batch_size <= len(items_list):
-                items_in_batch = items_list[i:i+batch_size]
-            else:
-                items_in_batch = items_list[len(items_list)-batch_size:]
-            x = np.zeros((batch_size,1,params['cnn']['n_frames'],params['cnn']['n_mel']))
-            y = []
-            x = patches[items_in_batch]
-            x = x.reshape(-1,1,322,96)
-            for i,index in enumerate(items_in_batch):
-                y.append(factors[index])
-            y = np.asarray(y)
-            if params['training']['normalize_y'] == True:
-                normalize(y,copy=False)
-            yield (np.asarray(x), np.asarray(y))
 
 def load_data_hf5(params,val_percent, test_percent):
     hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%s.hdf5" % (params['dataset']['dataset'],params['dataset']['window'])
@@ -225,7 +188,7 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         f_val = h5py.File(val_hdf5_file,"r")
         X_val = f_val['features'][:]
         #Y_val = f_val['targets'][:]
-        factors_val = np.load(common.DATASETS_DIR+'/item_factors_val_'+y_path+'.npy')
+        factors_val = np.load(common.DATASETS_DIR+'/y_val_'+y_path+'.npy')
         index_factors_val = open(common.DATASETS_DIR+'/items_index_val_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))
         index_val = f_val['index'][:]
@@ -238,7 +201,7 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         f_test = h5py.File(test_hdf5_file,"r")
         X_test = f_test['features'][:]
         #Y_test = f_test['targets'][:]
-        factors_test = np.load(common.DATASETS_DIR+'/item_factors_test_'+y_path+'.npy')
+        factors_test = np.load(common.DATASETS_DIR+'/y_test_'+y_path+'.npy')
         index_factors_test = open(common.DATASETS_DIR+'/items_index_test_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))
         index_test = f_test['index'][:]
@@ -283,7 +246,7 @@ def batch_block_generator(params, y_path, N_train, id2gt, X_meta=None,
     hdf5_file = common.PATCHES_DIR+"/patches_train_%s_%sx%s.hdf5" % (params['dataset']['dataset'],params['dataset']['npatches'],params['dataset']['window'])
     f = h5py.File(hdf5_file,"r")
     block_step = 50000
-    batch_size = 32
+    batch_size = params['training']['n_minibatch']
     randomize = True
     with_meta = False
     if X_meta != None:
@@ -313,37 +276,37 @@ def batch_block_generator(params, y_path, N_train, id2gt, X_meta=None,
 def process(params,with_predict=True,with_eval=True):
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
     params['cnn']['n_out'] = int(params['dataset']['dim'])
-    params['cnn']['n_frames'] =  int(params['dataset']['window'] * SR / float(HR))
+    #params['cnn']['n_frames'] =  int(params['dataset']['window'] * SR / float(HR))
     with_metadata = params['dataset']['with_metadata']
     only_metadata = params['dataset']['only_metadata']
     metadata_source = params['dataset']['meta-suffix']
     if with_metadata:
         if 'w2v' in metadata_source:
-            X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
+            X_meta = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))[:,:int(params['cnn']['sequence_length'])]
             params['cnn']['n_metafeatures'] = len(X_meta[0])
             if 'meta-suffix2' in params['dataset']:
-                X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                X_meta2 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures2'] = len(X_meta2[0])
             if 'meta-suffix3' in params['dataset']:
-                X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                X_meta3 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         elif 'model' in metadata_source or not params['dataset']['sparse']:
-            X_meta = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
+            X_meta = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
             params['cnn']['n_metafeatures'] = len(X_meta[0])
             if 'meta-suffix2' in params['dataset']:
-                X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                X_meta2 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures2'] = len(X_meta2[0])
             if 'meta-suffix3' in params['dataset']:
-                X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                X_meta3 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         else:
-            X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset'])).todense()
+            X_meta = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset'])).todense()
             params['cnn']['n_metafeatures'] = X_meta.shape[1]
             if 'meta-suffix2' in params['dataset']:
-                X_meta2 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
+                X_meta2 = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (params['dataset']['meta-suffix2'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures2'] = X_meta2.shape[1]
             if 'meta-suffix3' in params['dataset']:
-                X_meta3 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_train_%s_%s.npz' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
+                X_meta3 = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
         print(X_meta.shape)
     else:
@@ -382,9 +345,6 @@ def process(params,with_predict=True,with_eval=True):
             X_train = [X_train,X_train2]
             X_val = [X_val,X_val2]
             X_test = [X_test,X_test2]
-            #Y_train = [Y_train,Y_train2]
-            #Y_val = [Y_val,Y_val2]
-            #Y_test = [Y_test,Y_test2]
             print("X_train bi", len(X_train))
         if 'meta-suffix3' in params['dataset']:
             X_train3, Y_train3, X_val3, Y_val3, X_test3, Y_test3 = \
@@ -393,14 +353,11 @@ def process(params,with_predict=True,with_eval=True):
             X_train.append(X_train3)
             X_val.append(X_val3)
             X_test.append(X_test3)
-            #Y_train = [Y_train,Y_train2]
-            #Y_val = [Y_val,Y_val2]
-            #Y_test = [Y_test,Y_test2]
             print("X_train tri", len(X_train))
     else:
         if with_generator:
             id2gt = dict()
-            factors = np.load(common.DATASETS_DIR+'/item_factors_train_'+config.y_path+'.npy')
+            factors = np.load(common.DATASETS_DIR+'/y_train_'+config.y_path+'.npy')
             index_factors = open(common.DATASETS_DIR+'/items_index_train_'+params['dataset']['dataset']+'.tsv').read().splitlines()
             id2gt = dict((index,factor) for (index,factor) in zip(index_factors,factors))
             X_val, Y_val, X_test, Y_test, N_train = load_data_hf5_memory(params,config.training_params["validation"],config.training_params["test"],config.y_path,id2gt,X_meta,config.training_params["val_from_file"])
@@ -410,8 +367,7 @@ def process(params,with_predict=True,with_eval=True):
         else:
             X_train, Y_train, X_val, Y_val, X_test, Y_test, N_train = load_data_hf5(params,config.training_params["validation"],config.training_params["test"])
 
-    trained_model["whiten_scaler"] = common.DATASETS_DIR+'/train_data/scaler_%s.pk' % config.x_path
-    #logging.debug(X_train.shape)
+    trained_model["whiten_scaler"] = common.TRAINDATA_DIR+'/scaler_%s.pk' % config.x_path
     logging.debug("Training...")
 
     if config.model_arch["final_activation"] == 'softmax':
@@ -451,22 +407,11 @@ def process(params,with_predict=True,with_eval=True):
     common.save_trained_model(common.DEFAULT_TRAINED_MODELS_FILE, trained_model)
 
     logging.debug("Evaluating...")
-    #convout1_f = theano.function([model.get_input(train=False)], xout.get_output(train=False))
-    #f = K.function([K.learning_phase(), model.layers[0].input], [model.layers[1].output])
-    #C1 = f(X_test)
-    #C1 = np.squeeze(C1)
-    #print("C1 shape : ", C1.shape)
-    #np.save('results/last_layer_%s' % trained_model["model_id"],C1)
-    #print(C1)
-    # Step prediction
 
     print(X_test[0].shape,X_test[1].shape)
     preds=model.predict(X_test)
     print(preds.shape)
     if params["dataset"]["evaluation"] in ['binary','multiclass']:
-        #if preds.shape[-1] > 1:
-        #    y_pred = preds.argmax(axis=-1)
-        #else:
         y_pred = (preds > 0.5).astype('int32')        
         acc = accuracy_score(Y_test,y_pred)
         prec = precision_score(Y_test,y_pred,average='macro')
@@ -520,19 +465,14 @@ def process(params,with_predict=True,with_eval=True):
         model_config = trained_models[trained_models["model_id"] == trained_model["model_id"]]
         model_config = model_config.to_dict(orient="list")
         testset = open(common.DATASETS_DIR+'/items_index_test_%s.tsv' % (config.dataset_settings["dataset"])).read().splitlines()
-        #if with_metadata:
-        #    testset = open(common.DATASETS_DIR+'/train_data/index_test_%s_%s.tsv' % (metadata_source,config.dataset_settings["dataset"])).read().splitlines()
-        #else:
-        #    testset=open(common.DATASETS_DIR+'/testset_%s.tsv' % config.dataset_settings["dataset"]).read().splitlines()
         if config.training_params["val_from_file"] and not only_metadata:
-            factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source, with_patches=True)
+            predictions, predictions_index = obtain_predictions(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source, with_patches=True)
         else:
-            factors, factors_index = obtain_factors(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source)
-        #predict(trained_model["model_id"])
-        print("Factors created")
+            predictions, predictions_index = obtain_predictions(model_config, testset, trained_model["model_id"], config.predicting_params["trim_coeff"], model=model, with_metadata=with_metadata, only_metadata=only_metadata, metadata_source=metadata_source)
+        print("Predictions created")
 
     if with_eval:
-        do_eval(trained_model["model_id"],get_roc=True,get_map=True,get_p=True,factors=factors,factors_index=factors_index)
+        do_eval(trained_model["model_id"],get_roc=True,get_map=True,get_p=True,predictions=predictions,predictions_index=predictions_index)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

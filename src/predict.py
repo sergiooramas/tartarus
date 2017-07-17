@@ -1,4 +1,4 @@
-"""Script to predict factors from a trained model."""
+"""Script to predict predictions from a trained model."""
 from __future__ import print_function
 from __future__ import division
 import argparse
@@ -8,13 +8,10 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 import os
 import pandas as pd
-from sklearn import metrics
 from sklearn.externals import joblib
 from keras import backend as K
 import time
-import glob
 import pickle
-import pdb
 from sklearn.metrics import accuracy_score, average_precision_score, coverage_error, label_ranking_average_precision_score, label_ranking_loss
 from sklearn.preprocessing import StandardScaler, normalize
 from keras.models import model_from_json
@@ -23,29 +20,23 @@ import json
 import h5py
 import common
 
-#import librosa
-#import theano
-
 # Files and extensions
 DEFAULT_TRIM_COEFF = 0.15
 TESTSET_FILE = common.DATASETS_DIR+'/testset_W2.tsv'
 RESULTS_TSV = "results.tsv"
 OUT_EXT='.pk'
 RANDOM_SELECTION = False
-#SEED_FACTORS_FOLDER='factors_2016_07_05/seed_factors/'
 
 AGGREGATE_DICT = {
     "max": np.max,
     "mean": np.mean,
     "median": np.median
 }
-DATASET_NAME='W2_10_all_pmi_wl_200'
-
+DATASET_NAME='SUPER'
 
 SR = 22050
 HR = 1024
 N_FRAMES = int(10 * SR / float(HR)) # 10 seconds of audio
-#DATASET_FOLDER= 'dataset_initial_2_33/'
 SPEC_FOLDER=common.DATA_DIR+'/spectro_W2/'
 
 def load_sparse_csr(filename):
@@ -146,12 +137,8 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, spectr
     if trim_frames != 0:
         mel_spec = mel_spec[trim_frames:-trim_frames, :]
 
-    #if model_config["norm"][0]:
-    #    mel_spec = normalize(mel_spec)
-
     # Frames per patch
-    #n_frames = model.input_shape[2]  # shape should be (None, 1, frames, bins)
-    n_frames = 322
+    n_frames = model.input_shape[2]  # shape should be (None, 1, frames, bins)
 
     # Get all patches into a numpy array
 
@@ -161,14 +148,9 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, spectr
         patches = patches.reshape(-1, 1, n_frames, patches.shape[-1])
 
         if model_config["whiten"][0]:
-            if '3x' in model_config["whiten_scaler"][0]:
-                FEATS_MEAN = -37.27
-                FEATS_STD = 12.75
-                patches = (patches - FEATS_MEAN) / float(FEATS_STD)
-            else:
-                scaler_file = model_config["whiten_scaler"][0]            
-                scaler = joblib.load(common.TRAINDATA_DIR+'/'+scaler_file[scaler_file.rfind('/')+1:])
-                patches, _ = common.preprocess_data(patches, scaler)
+            scaler_file = model_config["whiten_scaler"][0]            
+            scaler = joblib.load(common.TRAINDATA_DIR+'/'+scaler_file[scaler_file.rfind('/')+1:])
+            patches, _ = common.preprocess_data(patches, scaler)
         if rnd_selection:
             #pred = random.sample(preds,1)[0]
             patches = np.asarray([patches[int(patches.shape[0]/2),:,:,:]])
@@ -185,14 +167,6 @@ def predict_track(model, model_config, track_uid, agg_method, trim_coeff, spectr
             #for i in range(0,18):
             pred = get_activations(model, output_layer, patches)[0][0]
             #    print(i,len(preds[0]),len(preds[0][0]))
-        #imd_f = theano.function([model.input],
-        #                model.nodes[-1].get_output(train=False))
-        #new_preds = imd_f(patches)
-        #print(new_preds.shape)
-        #print(new_preds)
-        # Aggregate
-        #pred = AGGREGATE_DICT[agg_method](preds)
-        #pdb.set_trace()
     except Exception,e:
         pred = []
         print(str(e))
@@ -235,7 +209,7 @@ def predict_track_metadata(model, metadata=[], output_layer=-1):
         print('Error predicting track')
     return pred[0]
 
-def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, pred_dataset=""):
+def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, pred_dataset=""):
     """Evaluates the model across the whole dataset."""
     # Read the pre-trained model
     agg_method="mean"
@@ -243,58 +217,52 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
     if not model:
         model = read_model(model_config)
 
-    factors = dict()
+    predictions = dict()
     params = eval(model_config["dataset_settings"][0])
-    params_training = eval(model_config["training_params"][0])
-    #cnn_params = eval(model_config["cnn"][0])
-    #with_metadata=True
-    factors=[]
-    factors_index=[]
+    predictions=[]
+    predictions_index=[]
 
     if pred_dataset == "":
         dataset_name = params["dataset"]
     else:
         dataset_name = pred_dataset
-    print(len(dataset))
     if with_metadata:
         if 'sparse' not in params:
             params['sparse'] = True
-        #all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_test_%s_%s.npy' % (metadata_source,dataset_name))
+        #all_X_meta = np.load(common.TRAINDATA_DIR+'/X_test_%s_%s.npy' % (metadata_source,dataset_name))
         if 'w2v' in metadata_source:
             sequence_length = eval(model_config["model_arch"][0])["sequence_length"]
-            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))[:,:int(sequence_length)]
+            all_X_meta = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))[:,:int(sequence_length)]
         elif 'model' in metadata_source or not params['sparse']:
-            all_X_meta = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))
+            all_X_meta = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source,dataset_name))
             print ("meta1",all_X_meta.shape)
             print (metadata_source)
         else:
-            all_X_meta = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source,dataset_name)).toarray()
+            all_X_meta = load_sparse_csr(common.TRAINDATA_DIR+'/X_%s_%s_%s.npz' % (set_name,metadata_source,dataset_name)).toarray()
 
         if 'meta-suffix2' in params:
             metadata_source2 = params['meta-suffix2']
             if 'w2v' in metadata_source2:
                 sequence_length = eval(model_config["model_arch"][0])["sequence_length"]
-                all_X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))[:,:int(sequence_length)]
+                all_X_meta2 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))[:,:int(sequence_length)]
             elif 'model' in metadata_source or not params['sparse']:
-                all_X_meta2 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))
+                all_X_meta2 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source2,dataset_name))
                 print ("meta2",all_X_meta2.shape)
                 print (metadata_source2)
             else:
-                all_X_meta2 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source2,dataset_name)).toarray()
-            #all_X_meta = [all_X_meta,all_X_meta2]
+                all_X_meta2 = load_sparse_csr(common.TRAINDATA_DIR+'/X_%s_%s_%s.npz' % (set_name,metadata_source2,dataset_name)).toarray()
 
         if 'meta-suffix3' in params:
             metadata_source3 = params['meta-suffix3']
             if 'w2v' in metadata_source3:
                 sequence_length = eval(model_config["model_arch"][0])["sequence_length"]
-                all_X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))[:,:int(sequence_length)]
+                all_X_meta3 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))[:,:int(sequence_length)]
             elif 'model' in metadata_source or not params['sparse']:
-                all_X_meta3 = np.load(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))
+                all_X_meta3 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source3,dataset_name))
                 print ("meta3",all_X_meta3.shape)
                 print (metadata_source3)
             else:
-                all_X_meta3 = load_sparse_csr(common.DATASETS_DIR+'/train_data/X_%s_%s_%s.npz' % (set_name,metadata_source3,dataset_name)).toarray()
-            #all_X_meta = [all_X_meta,all_X_meta2]
+                all_X_meta3 = load_sparse_csr(common.TRAINDATA_DIR+'/X_%s_%s_%s.npz' % (set_name,metadata_source3,dataset_name)).toarray()
 
         index_meta = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
         index_meta_inv = dict()
@@ -312,20 +280,13 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
             if output_layer == -1:    
                 preds = model.predict(x_block)
             else:
-                #for i in range(0,20):
-                #    preds = get_activations(model, i, x_block)
-                #    print(i,preds[0].shape,preds[0][0].shape)
                 preds = get_activations(model, output_layer, x_block)[0]
-            factors.extend([prediction for prediction in preds])
-            # Borrado para poder predecir train en MSD-AG-S
-            #factors_index.extend(index_block.tolist())
+            predictions.extend([prediction for prediction in preds])
             print(i)
-        # Anadido para poder predecir train en MSD-AG-S
-        factors_index = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
+        predictions_index = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
     elif only_metadata:
         block_step = 1000
         N_train = all_X_meta.shape[0]
-        print(params['dataset'])
         for i in range(0,N_train,block_step):
             if 'meta-suffix3' in params:
                 x_block = [all_X_meta[i:min(N_train,i+block_step)],all_X_meta2[i:min(N_train,i+block_step)],all_X_meta3[i:min(N_train,i+block_step)]]
@@ -339,9 +300,9 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
                 preds = model.predict(x_block)
             else:
                 preds = get_activations(model, output_layer, x_block)[0]
-            factors.extend([prediction for prediction in preds])
+            predictions.extend([prediction for prediction in preds])
             print(i)
-        factors_index = index_meta
+        predictions_index = index_meta
     else:
         for i, track_uid in enumerate(dataset):
             if with_metadata:
@@ -354,11 +315,8 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
                 pred = predict_track(model, model_config, track_uid, agg_method,
                                      trim_coeff, spectro_folder=spectro_folder, rnd_selection=rnd_selection, output_layer=output_layer)
             if pred != []:
-                factors.append(pred)
-                factors_index.append(track_uid)
-            #else:
-            #    factors.append(np.zeros(factors[0].shape))
-            #factors_index.append(track_uid)
+                predictions.append(pred)
+                predictions_index.append(track_uid)
             if i%100==0:
                 print(i)
     suffix = ''        
@@ -366,27 +324,27 @@ def obtain_factors(model_config, dataset, model_id, trim_coeff=0.15, model=False
     #    suffix = '_rnd'
     if spectro_folder != '':
         suffix += '_' + spectro_folder
-    factors = np.asarray(factors)
+    predictions = np.asarray(predictions)
     if output_layer != -1:
-        np.save(common.TRAINDATA_DIR+'/X_%s_%s-pred_%s_%s.npy' % (set_name,model_id,output_layer,dataset_name), factors)
+        if not os.path.isdir(common.TRAINDATA_DIR):
+            os.makedirs(common.TRAINDATA_DIR)
+        np.save(common.TRAINDATA_DIR+'/X_%s_%s-pred_%s_%s.npy' % (set_name,model_id,output_layer,dataset_name), predictions)
         fw=open(common.TRAINDATA_DIR+'/items_index_%s_%s-pred_%s_%s.tsv' % (set_name,model_id,output_layer,dataset_name),'w')
-        fw.write('\n'.join(factors_index))
+        fw.write('\n'.join(predictions_index))
         fw.close()
     else:
-        np.save(common.TRAINDATA_DIR+'/X_%s_%s-pred_%s.npy' % (set_name,model_id,dataset_name), factors)
-        fw=open(common.TRAINDATA_DIR+'/items_index_%s_%s-pred_%s.tsv' % (set_name,model_id,dataset_name),'w')
-        fw.write('\n'.join(factors_index))
-        fw.close()
         if set_name == "test":
             if pred_dataset != "":
                 suffix = suffix+"_"+pred_dataset
-            np.save(common.FACTORS_DIR+'/factors_%s%s' % (model_id,suffix),factors)
-            fw=open(common.FACTORS_DIR+'/index_factors_%s%s.tsv' % (model_id,suffix),'w')
-            fw.write('\n'.join(factors_index))
+            if not os.path.isdir(common.PREDICTIONS_DIR):
+                os.makedirs(common.PREDICTIONS_DIR)
+            np.save(common.PREDICTIONS_DIR+'/pred_%s%s' % (model_id,suffix),predictions)
+            fw=open(common.PREDICTIONS_DIR+'/index_pred_%s%s.tsv' % (model_id,suffix),'w')
+            fw.write('\n'.join(predictions_index))
             fw.close()
-    print(len(factors))
-    print(len(factors_index))
-    return factors, factors_index
+    print(len(predictions))
+    print(len(predictions_index))
+    return predictions, predictions_index
 
 
 def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file="", pred_dataset="", spectro_folder="", set_name="test", rnd_selection=False, output_layer=-1, with_patches=False):
@@ -428,10 +386,8 @@ def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file=
     f=open(dataset_tsv)
     dataset = f.read().splitlines()
     print(len(dataset))
-    factors, factors_index = obtain_factors(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches, pred_dataset=pred_dataset)
+    predictions, predictions_index = obtain_predictions(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches, pred_dataset=pred_dataset)
     print('Factors created')
-    #do_eval(model_id)
-    #evaluate_factors(factors,eval(model_config['dataset_settings'][0]),model_id)
 
 
 if __name__ == "__main__":

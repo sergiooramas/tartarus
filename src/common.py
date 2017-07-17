@@ -5,14 +5,15 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Files and extensions
-DATA_DIR = "/homedtic/soramas/tartarus/data"
+DATA_DIR = "/homedtic/soramas/tartarus/dlrs-data"
 DEFAULT_TRAINED_MODELS_FILE = DATA_DIR+"/trained_models.tsv"
 DEFAULT_MODEL_PREFIX = "model_"
 MODELS_DIR = DATA_DIR+"/models"
 PATCHES_DIR = DATA_DIR+"/patches"
-DATASETS_DIR = DATA_DIR+"/datasets"
-TRAINDATA_DIR = DATA_DIR+"/datasets/train_data"
-FACTORS_DIR = DATA_DIR+"/factors"
+DATASETS_DIR = DATA_DIR+"/splits"
+TRAINDATA_DIR = DATA_DIR+"/train_data"
+PREDICTIONS_DIR = DATA_DIR+"/predictions"
+RESULTS_DIR = DATA_DIR+"/results"
 REC_DIR = DATA_DIR+"/playlists"
 MODEL_EXT = ".json"
 PLOT_EXT = ".png"
@@ -21,7 +22,6 @@ MAX_N_SCALER = 300000
 
 #create spectrograms folders
 SPECTRO_PATH = DATA_DIR+"/spectrograms/"
-AUDIO_PATH = "/homedtic/soramas/msd/audio/mp3/"
 INDEX_PATH = DATA_DIR+"/index/"
 
 
