@@ -1,8 +1,16 @@
 # Tartarus
 
-Tartarus is a python module for Deep Learning experiments on Audio and Text and their combination.
+Tartarus is a python module for Deep Learning experiments on Audio and Text and their combination. It works for multiclass and multi-label classification, and for recommendation using matrix factorization techniques.
 
-Requirements: This library works with keras 1.1.0.
+In this documentation 3 experiments are described.
+
+* Test experiments to understand the executation pipeline
+* Recommendation experiments from the DLRS-RecSys 2017 paper
+* Multi-label classification experiments from the ISMIR 2017 paper
+
+Requirements: 
+This library works with keras 1.1.0.
+To work with audio you will need also the librosa audio library.
 
 To use this library you need to create a folder structure as follows:
 
