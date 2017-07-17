@@ -67,59 +67,59 @@ You can also run train, prediction and evaluation separately.
 
 It is possible to obtain a specific layer prediction output from `predict.py` by using the `-l` parameter.
 
-## Dummy Experiments
+## TEST Experiments
 
-To test the library you can use this toy examples made with the SUPER dataset. This dummy dataset is made with 9 audio tracks, song lyrics, and 3 genre clases. To avoid copyright issues this dataset is made with the music of my band Supertropica. Evaluations on this mini dataset has no sense, this is just an example to understand the full pipeline of the library.
+To test the library you can use this toy examples made with the SUPER dataset. This dummy dataset is made with 9 audio tracks, song lyrics, and 3 genre clases. To avoid copyright issues this dataset contains music of my own band Supertropica. Evaluations on this mini dataset has no sense, this is just an example to understand the full pipeline of the library.
 
 ### SUPER dataset
 
 It is in folder dummy-data/
 Open commons.py and set the full path of the dummy-data/ folder
 
-DATA_DIR=path to dummy-data folder
+	DATA_DIR=path to dummy-data folder
 
 ### Preprocessing data
 
 Audio:
-python create_spectrograms.py SUPER
-python create_patches.py
+	python create_spectrograms.py SUPER
+	python create_patches.py
 
 Text:
-python load_vsm.py
-python load_w2v.py
+	python load_vsm.py
+	python load_w2v.py
 
-### Audio experiment
+### Experiment
 
-python run_experiments.py dummy_audio
+Audio:
+	python run_experiments.py dummy_audio
 
-### Text experiments
-
-python run_experiments.py dummy_text_vsm bow
-python run_experiments.py dummy_text_w2v w2v
+Text:
+	python run_experiments.py dummy_text_vsm bow
+	python run_experiments.py dummy_text_w2v w2v
 
 ### Prediction of feature embeddings
 
 Audio: 
-python predict.py model_1 -p -l 9 -s train
-python predict.py model_1 -p -l 9 -s val
-python predict.py model_1 -p -l 9 -s test
+	python predict.py model_1 -p -l 9 -s train
+	python predict.py model_1 -p -l 9 -s val
+	python predict.py model_1 -p -l 9 -s test
 
 Text: 
-python predict.py model_2 -l 5 -s train
-python predict.py model_2 -l 5 -s val
-python predict.py model_2 -l 5 -s test
+	python predict.py model_2 -l 5 -s train
+	python predict.py model_2 -l 5 -s val
+	python predict.py model_2 -l 5 -s test
 
 
 ### Multimodal experiment
 
-python run_experiments.py dummy_multimodal model_1-pred_9 model_2-pred_5
+	python run_experiments.py dummy_multimodal model_1-pred_9 model_2-pred_5
 
 
 ## DLRS-RecSys 2017 Experiments (Recommendation)
 
-To reproduce the experiments in the Cold-start recommendation paper, you have to download the dataset from and untar it.
+        Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
 
-Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
+To reproduce the experiments in the Cold-start recommendation paper, you have to download the MSD-A dataset and untar it.
 
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, and learned feature embeddings.
 
@@ -139,13 +139,14 @@ For multimodal recommendation:
 
 More approaches from the paper can be tested modifying the configuration inside `run_experiments.py`.
 
-Full dataset description http://mtg.upf.edu/download/datasets/msd-a
+Full dataset and description: 
+	http://mtg.upf.edu/download/datasets/msd-a
 
 ## ISMIR 2017 Experiments (Multi-label Classification)
 
-To reproduce the experiments in the Multi-label classification paper, you have to download the dataset and untar it.
+        Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
 
-Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
+To reproduce the experiments in the Multi-label classification paper, you have to download the MuMu dataset and untar it.
 
 This dataset contains the item-class matrices, data splits, and learned feature embeddings.
 
@@ -174,3 +175,5 @@ Multimodal experiments with 3 modalities:
 
 	python run_experiments.py cosine_multilabel_tri model_audio model_text model_visual
 
+Full dataset and description: 
+	https://www.upf.edu/en/web/mtg/mumu
