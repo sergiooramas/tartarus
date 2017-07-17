@@ -5,8 +5,8 @@ Tartarus is a python module for Deep Learning experiments on Audio and Text and 
 In this documentation 3 experiments are described.
 
 * Test experiments to understand the executation pipeline
-* Recommendation experiments from the DLRS-RecSys 2017 paper
-* Multi-label classification experiments from the ISMIR 2017 paper
+* Recommendation experiments from the [DLRS-RecSys 2017 paper](http://mtg.upf.edu/node/3804)
+* Multi-label classification experiments from the [ISMIR 2017 paper](http://mtg.upf.edu/node/3803)
 
 Requirements: 
 This library works with keras 1.1.0.
@@ -17,14 +17,14 @@ To use this library you need to create a folder structure as follows:
     /tartarus
         /src
         /data
-            /datasets
-                /train_data
+            /splits
+            /train_data
             /factors
             /models
             /results
             /patches
 
-You need to put your dataset files inside `data/datasets`. Files that describe the dataset need to have the following nomenclature:
+You need to put your dataset files inside `data/splits`. Files that describe the dataset need to have the following nomenclature:
 
 A file with index ids, with one id per line, called:
 
@@ -35,12 +35,17 @@ A file with index ids, with one id per line, called:
 
 Files with the factors obtained from matrix factorization:
 
-    item_factors_$1_$2_$3.npy
+    y_$1_$2_$3.npy
     user_factors_$1_$2_$3.npy
 
 - $1 kind of factorization (als, pmi)
 - $2 dimensions of the output
 - $3 dataset name
+
+If the ground truth is for classification it is necessary two files:
+
+    y_class_$2_$3.npy
+    genre_labels_$3.npy
 
 A file with the ground truth matrix for the test set
 
@@ -48,7 +53,7 @@ A file with the ground truth matrix for the test set
 
 - $1 dataset name
 
-In addition, in the folder `data/dataset/train_data` we need to put the X matrices with the features to train the models. 
+In addition, in the folder `data/train_data` we need to put the X matrices with the features to train the models. 
 These files may be dense or sparse matrices. X files should have the following nomenclatures:
 
     X_$1_$2_$3.npy/npz
@@ -59,7 +64,7 @@ These files may be dense or sparse matrices. X files should have the following n
 
 When using audio, in folder `/data/patches` we need to add h5py files with the spectrogram patches of the different sets. 
 This files must have 2 datasets inside, one called index, where the item ids must be stored, and the other called features, where the spectrogram patches should be stored. 
-Patches may be created using the scripts inside `src/spectrograms` folder. 
+Patches may be created using the scripts inside `src/audio-processing` folder. 
 The nomenclature of patches files is the following:
 
     patches_$1_$2_$3_$4.hdf5
@@ -89,30 +94,36 @@ Open commons.py and set the full path of the dummy-data/ folder
 ### Preprocessing data
 
 Audio:
+
 	python create_spectrograms.py SUPER
 	python create_patches.py
 
 Text:
+
 	python load_vsm.py
 	python load_w2v.py
 
 ### Experiment
 
 Audio:
+
 	python run_experiments.py dummy_audio
 
 Text:
+
 	python run_experiments.py dummy_text_vsm bow
 	python run_experiments.py dummy_text_w2v w2v
 
 ### Prediction of feature embeddings
 
 Audio: 
+
 	python predict.py model_1 -p -l 9 -s train
 	python predict.py model_1 -p -l 9 -s val
 	python predict.py model_1 -p -l 9 -s test
 
 Text: 
+
 	python predict.py model_2 -l 5 -s train
 	python predict.py model_2 -l 5 -s val
 	python predict.py model_2 -l 5 -s test
@@ -125,13 +136,13 @@ Text:
 
 ## DLRS-RecSys 2017 Experiments (Recommendation)
 
-        Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
+Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
 
 To reproduce the experiments in the Cold-start recommendation paper, you have to download the MSD-A dataset and untar it.
 
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, and learned feature embeddings.
 
-    https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing
+    [https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing](https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing)
 
 Untar it and point DATA_DIR in common.py to the full path of the dlrs-data/ folder
 
@@ -158,7 +169,7 @@ To reproduce the experiments in the Multi-label classification paper, you have t
 
 This dataset contains the item-class matrices, data splits, and learned feature embeddings.
 
-    https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing
+    [https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing](https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing)
 
 Untar it and point DATA_DIR in common.py to the full path of the ismir-data/ folder
 
