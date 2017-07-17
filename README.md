@@ -131,7 +131,7 @@ To reproduce the experiments in the Cold-start recommendation paper, you have to
 
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, and learned feature embeddings.
 
-    https://drive.google.com/file/d/0B-oq_x72w8NUSGFZRzJmQXhYSlE/view?usp=sharing
+    https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing
 
 Untar it and point DATA_DIR in common.py to the full path of the dlrs-data/ folder
 
@@ -152,13 +152,13 @@ Full dataset and description:
 
 ## ISMIR 2017 Experiments (Multi-label Classification)
 
-        Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
+Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
 
 To reproduce the experiments in the Multi-label classification paper, you have to download the MuMu dataset and untar it.
 
 This dataset contains the item-class matrices, data splits, and learned feature embeddings.
 
-    https://
+    https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing
 
 Untar it and point DATA_DIR in common.py to the full path of the ismir-data/ folder
 
