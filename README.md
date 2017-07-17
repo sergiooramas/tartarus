@@ -67,15 +67,65 @@ You can also run train, prediction and evaluation separately.
 
 It is possible to obtain a specific layer prediction output from `predict.py` by using the `-l` parameter.
 
-## DLRS Experiments
+## Dummy Experiments
 
-To reproduce the experiments in the Cold-start recommendation paper, you have to download the dataset from and untar it in the /tartarus folder.
+To test the library you can use this toy examples made with the SUPER dataset. This dummy dataset is made with 9 audio tracks, song lyrics, and 3 genre clases. To avoid copyright issues this dataset is made with the music of my band Supertropica. Evaluations on this mini dataset has no sense, this is just an example to understand the full pipeline of the library.
+
+### SUPER dataset
+
+It is in folder dummy-data/
+Open commons.py and set the full path of the dummy-data/ folder
+
+DATA_DIR=path to dummy-data folder
+
+### Preprocessing data
+
+Audio:
+python create_spectrograms.py SUPER
+python create_patches.py
+
+Text:
+python load_vsm.py
+python load_w2v.py
+
+### Audio experiment
+
+python run_experiments.py dummy_audio
+
+### Text experiments
+
+python run_experiments.py dummy_text_vsm bow
+python run_experiments.py dummy_text_w2v w2v
+
+### Prediction of feature embeddings
+
+Audio: 
+python predict.py model_1 -p -l 9 -s train
+python predict.py model_1 -p -l 9 -s val
+python predict.py model_1 -p -l 9 -s test
+
+Text: 
+python predict.py model_2 -l 5 -s train
+python predict.py model_2 -l 5 -s val
+python predict.py model_2 -l 5 -s test
+
+
+### Multimodal experiment
+
+python run_experiments.py dummy_multimodal model_1-pred_9 model_2-pred_5
+
+
+## DLRS-RecSys 2017 Experiments (Recommendation)
+
+To reproduce the experiments in the Cold-start recommendation paper, you have to download the dataset from and untar it.
 
 Oramas S., Nieto O., Sordo M., & Serra X. (2017) A Deep Multimodal Approach for Cold-start Music Recommendation. https://arxiv.org/abs/1706.09739
 
-This dataset contains the user-item matrices, factor matrices from the factorization, data splits, learned feature embeddings, and models.
+This dataset contains the user-item matrices, factor matrices from the factorization, data splits, and learned feature embeddings.
 
     https://drive.google.com/file/d/0B-oq_x72w8NUSGFZRzJmQXhYSlE/view?usp=sharing
+
+Untar it and point DATA_DIR in common.py to the full path of the dlrs-data/ folder
 
 Then you can run the experiments by calling `run_experiments.py`, for example:
 
@@ -90,3 +140,37 @@ For multimodal recommendation:
 More approaches from the paper can be tested modifying the configuration inside `run_experiments.py`.
 
 Full dataset description http://mtg.upf.edu/download/datasets/msd-a
+
+## ISMIR 2017 Experiments (Multi-label Classification)
+
+To reproduce the experiments in the Multi-label classification paper, you have to download the dataset and untar it.
+
+Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
+
+This dataset contains the item-class matrices, data splits, and learned feature embeddings.
+
+    https://
+
+Untar it and point DATA_DIR in common.py to the full path of the ismir-data/ folder
+
+Then you can run the experiments by calling `run_experiments.py`, for example:
+
+
+Multimodal experiments with LOGISTIC loss:
+
+	python run_experiments.py logistic_multilabel_bi model_audio model_text
+	python run_experiments.py logistic_multilabel_bi model_visual model_text
+	python run_experiments.py logistic_multilabel_bi model_visual model_audio
+
+Multimodal experiments with COSINE loss:
+
+	python run_experiments.py cosine_multilabel_bi model_audio model_text
+	python run_experiments.py cosine_multilabel_bi model_visual model_text
+	python run_experiments.py cosine_multilabel_bi model_visual model_audio
+
+Multimodal experiments with 3 modalities:
+
+	python run_experiments.py logistic_multilabel_tri model_audio model_text model_visual
+
+	python run_experiments.py cosine_multilabel_tri model_audio model_text model_visual
+
