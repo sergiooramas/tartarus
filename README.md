@@ -142,7 +142,7 @@ To reproduce the experiments in the Cold-start recommendation paper, you have to
 
 This dataset contains the user-item matrices, factor matrices from the factorization, data splits, and learned feature embeddings.
 
-[https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing](https://drive.google.com/file/d/0B-oq_x72w8NUWjEyVmFMbGRmdEU/view?usp=sharing)
+[https://doi.org/10.5281/zenodo.831348](https://doi.org/10.5281/zenodo.831348)
 
 Untar it and point DATA_DIR in common.py to the full path of the dlrs-data/ folder
 
@@ -169,7 +169,7 @@ To reproduce the experiments in the Multi-label classification paper, you have t
 
 This dataset contains the item-class matrices, data splits, and learned feature embeddings.
 
-[https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing](https://drive.google.com/file/d/0B-oq_x72w8NUdG5NcUtzQXYyWjg/view?usp=sharing)
+[https://doi.org/10.5281/zenodo.831189](https://doi.org/10.5281/zenodo.831189)
 
 Untar it and point DATA_DIR in common.py to the full path of the ismir-data/ folder
 
