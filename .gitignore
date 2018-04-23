@@ -1,0 +1,14 @@
+sftp-config.json
+.*
+!/.gitignore
+dummy-data/models/
+dummy-data/patches/
+dummy-data/predictions/
+dummy-data/results/
+dummy-data/spectrograms/
+dummy-data/train_data/
+dummy-data/trained_models.tsv
+ismir-data/
+tenv/
+src/text-processing/word2vec_models/
+*.pyc

@@ -4,13 +4,21 @@ Tartarus is a python module for Deep Learning experiments on Audio and Text and 
 
 In this documentation 3 experiments are described.
 
-* Test experiments to understand the executation pipeline
+* Test experiments to understand the executation pipeline (SUPER dataset)
 * Recommendation experiments from the [DLRS-RecSys 2017 paper](http://mtg.upf.edu/node/3804)
 * Multi-label classification experiments from the [ISMIR 2017 paper](http://mtg.upf.edu/node/3803)
 
 Requirements: 
-This library works with keras 1.1.0.
+This library works with Keras deep learning framework and Theano backend.
 To work with audio you will need also the librosa audio library.
+There is a requirements.txt file with all library requirements to run it.
+
+Once Keras is installed, you have to set up Theano backend and ordering in the .keras/keras.json config file in your home directory:
+
+"image_data_format": "channels_first"
+"backend": "theano"
+
+If you want to use Tensorflow you have to change ordering in convolutions in src/models.py.
 
 To use this library you need to create a folder structure as follows:
 
@@ -93,12 +101,12 @@ Open commons.py and set the full path of the dummy-data/ folder
 
 ### Preprocessing data
 
-Audio:
+Audio (run from audio-processing/ folder):
 
 	python create_spectrograms.py SUPER
 	python create_patches.py
 
-Text:
+Text (run from text-processing/ folder):
 
 	python load_vsm.py
 	python load_w2v.py
@@ -115,6 +123,8 @@ Text:
 	python run_experiments.py dummy_text_w2v w2v
 
 ### Prediction of feature embeddings
+
+Model names are assigned iteratively. I assume you have run the SUPER scripts with a clean installation of tartarus and in the order they are in this readme. Doing so, model_1 should be the audio model and model_2 the text bow model. When you train a model it will show you the model name before the training start.
 
 Audio: 
 

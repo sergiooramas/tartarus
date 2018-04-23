@@ -7,7 +7,6 @@ import json
 import sys
 sys.path.insert(0, '../')
 import common
-from configurations import config_spectro
 import signal
 
 """
@@ -37,7 +36,7 @@ def compute_spec(audio_file,spectro_file):
 	audio, sr = librosa.load(audio_file, sr=config['resample_sr'])
 	# Compute spectrogram
 	if config['spectrogram_type']=='cqt':
-		spec = librosa.cqt(audio, sr=sr, hop_length=config['hop'], n_bins=config['cqt_bins'], real=False)
+		spec = librosa.cqt(audio, sr=sr, hop_length=config['hop'], n_bins=config['cqt_bins'])
 	elif config['spectrogram_type']=='mel':
 		spec = librosa.feature.melspectrogram(y=audio, sr=sr, hop_length=config['hop'],n_fft=config['n_fft'],n_mels=config['n_mels'])
 	elif config['spectrogram_type']=='stft':
@@ -73,8 +72,8 @@ def do_process(id, audio_file, spectro_file):
 		ferrors.write(audio_file+"\n")
 		ferrors.write(str(e))
 	#	ferrors.close()
-	#	print 'Error computing spec', audio_file
-	#	print str(e)
+		print 'Error computing spec', audio_file
+		print str(e)
 
 def process_files(files):
 	Parallel(n_jobs=config['num_process'])(delayed(do_process)(id, audio_file, spectro_file)
@@ -86,7 +85,7 @@ if __name__ == '__main__':
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parser.add_argument('configuration', default="magna", help='Id of the configuration dictionary')
 	args = parser.parse_args()
-	config = config_spectro[args.configuration]
+	config = common.config_spectro[args.configuration]
 
 	# set spectrograms folder
 	if config['compute_spectro']:

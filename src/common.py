@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Files and extensions
-DATA_DIR = "/homedtic/soramas/tartarus/dlrs-data"
+DATA_DIR = "/Users/Sergio/webserver/tartarus/ismir-data"
 DEFAULT_TRAINED_MODELS_FILE = DATA_DIR+"/trained_models.tsv"
 DEFAULT_MODEL_PREFIX = "model_"
 MODELS_DIR = DATA_DIR+"/models"
@@ -24,6 +24,22 @@ MAX_N_SCALER = 300000
 SPECTRO_PATH = DATA_DIR+"/spectrograms/"
 INDEX_PATH = DATA_DIR+"/index/"
 
+### Spectrograms
+config_spectro = {
+    'SUPER' : {
+        'audio_folder' : DATA_DIR+'/audio/',
+        'spectrograms_name' : 'SUPER',
+        'resample_sr' : 22050,
+        'hop' : 1024,
+        'spectrogram_type' : 'cqt',
+        'cqt_bins' : 96,
+        'convert_id' : True, # converts the (path) name of a file to its ID name - correspondence in index_file.
+        'index_file' : 'index_audio_SUPER.tsv', # index to be converted. THIS IS THE LIST THAT ONE WILL COMPUTE
+        'audio_ext' : ['mp3'] , # in list form
+        'num_process' : 8,
+        'compute_spectro' : True
+    }
+}
 
 def ensure_dir(directory):
     """Makes sure that the given directory exists."""

@@ -78,7 +78,7 @@ def prepare_set(dataset_name, set_name, normalize=True, with_factors=True, scale
         file = spec_folder+msd_folder+track_id+".pk"
         try:
             spec = pickle.load(open(file))
-            spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
+            spec = librosa.power_to_db(np.abs(spec) ** 2,ref=np.max).T
             for i in range(0,N_SAMPLES):
                 try:
                     sample = sample_patch(spec,N_FRAMES)
@@ -143,7 +143,7 @@ def prepare_testset(dataset_name):
         file = spec_folder+msd_folder+track_id+".pk"
         try:
             spec = pickle.load(open(file))
-            spec = librosa.logamplitude(np.abs(spec) ** 2,ref_power=np.max).T
+            spec = librosa.power_to_db(np.abs(spec) ** 2,ref=np.max).T
             pickle.dump(spec, open(test_folder+track_id+".pk","wb"))
             testset.append(track_id)
             testset_index.append(t)
