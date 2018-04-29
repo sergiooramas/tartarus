@@ -191,7 +191,7 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         factors_val = np.load(common.DATASETS_DIR+'/y_val_'+y_path+'.npy')
         index_factors_val = open(common.DATASETS_DIR+'/items_index_val_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_val = dict((index,factor) for (index,factor) in zip(index_factors_val,factors_val))
-        index_val = f_val['index'][:]
+        index_val = [i for i in f_val['index'][:] if i in id2gt_val]
         X_val = np.delete(X_val, np.where(index_val == ""), axis=0)
         index_val = np.delete(index_val, np.where(index_val == ""))                
 
@@ -204,7 +204,7 @@ def load_data_hf5_memory(params,val_percent, test_percent, y_path, id2gt, X_meta
         factors_test = np.load(common.DATASETS_DIR+'/y_test_'+y_path+'.npy')
         index_factors_test = open(common.DATASETS_DIR+'/items_index_test_'+params['dataset']['dataset']+'.tsv').read().splitlines()
         id2gt_test = dict((index,factor) for (index,factor) in zip(index_factors_test,factors_test))
-        index_test = f_test['index'][:]
+        index_test = [i for i in f_test['index'][:] if i in id2gt_test]
         X_test = np.delete(X_test, np.where(index_test == ""), axis=0)
         index_test = np.delete(index_test, np.where(index_test == ""))                
 
@@ -290,6 +290,9 @@ def process(params,with_predict=True,with_eval=True):
             if 'meta-suffix3' in params['dataset']:
                 X_meta3 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
+            if 'meta-suffix4' in params['dataset']:
+                X_meta4 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix4'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures4'] = len(X_meta4[0])
         elif 'model' in metadata_source or not params['dataset']['sparse']:
             X_meta = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (metadata_source,params['dataset']['dataset']))
             params['cnn']['n_metafeatures'] = len(X_meta[0])
@@ -299,6 +302,9 @@ def process(params,with_predict=True,with_eval=True):
             if 'meta-suffix3' in params['dataset']:
                 X_meta3 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
+            if 'meta-suffix4' in params['dataset']:
+                X_meta4 = np.load(common.TRAINDATA_DIR+'/X_train_%s_%s.npy' % (params['dataset']['meta-suffix4'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures4'] = len(X_meta4[0])
         else:
             X_meta = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (metadata_source,params['dataset']['dataset'])).todense()
             params['cnn']['n_metafeatures'] = X_meta.shape[1]
@@ -308,6 +314,9 @@ def process(params,with_predict=True,with_eval=True):
             if 'meta-suffix3' in params['dataset']:
                 X_meta3 = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (params['dataset']['meta-suffix3'],params['dataset']['dataset']))
                 params['cnn']['n_metafeatures3'] = len(X_meta3[0])
+            if 'meta-suffix4' in params['dataset']:
+                X_meta4 = load_sparse_csr(common.TRAINDATA_DIR+'/X_train_%s_%s.npz' % (params['dataset']['meta-suffix4'],params['dataset']['dataset']))
+                params['cnn']['n_metafeatures3'] = len(X_meta4[0])
         print(X_meta.shape)
     else:
         X_meta = None
@@ -354,6 +363,14 @@ def process(params,with_predict=True,with_eval=True):
             X_val.append(X_val3)
             X_test.append(X_test3)
             print("X_train tri", len(X_train))
+        if 'meta-suffix4' in params['dataset']:
+            X_train4, Y_train4, X_val4, Y_val4, X_test4, Y_test4 = \
+                load_data_preprocesed(params, config.x_path, config.y_path, params['dataset']['dataset'], config.training_params["validation"],
+                          config.training_params["test"], config.dataset_settings["nsamples"], with_metadata, only_metadata, params['dataset']['meta-suffix4'])
+            X_train.append(X_train4)
+            X_val.append(X_val4)
+            X_test.append(X_test4)
+            print("X_train four", len(X_train))
     else:
         if with_generator:
             id2gt = dict()

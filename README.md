@@ -171,7 +171,7 @@ More approaches from the paper can be tested modifying the configuration inside 
 Full dataset and description: 
 	http://mtg.upf.edu/download/datasets/msd-a
 
-## ISMIR 2017 Experiments (Multi-label Classification)
+## ISMIR 2017 and TISMIR Experiments (Multi-label Classification)
 
 Oramas S., Nieto O., Barbieri F., & Serra X. (2017) Multi-label Music Genre Classification from Audio, Text, and Images Using Deep Features. In Proceedings of the 18th International Society of Music Information Retrieval Conference (ISMIR 2017).
 
@@ -204,5 +204,40 @@ Multimodal experiments with 3 modalities:
 
 	python run_experiments.py cosine_multilabel_tri model_audio model_text model_visual
 
+Text experiments:
+
+	python run_experiments.py cosine_text_multilabel VSM
+	python run_experiments.py cosine_text_multilabel VSM-SEM
+	python run_experiments.py logistic_text_multilabel VSM
+	python run_experiments.py logistic_text_multilabel VSM-SEM
+
+
 Full dataset and description: 
 	https://www.upf.edu/en/web/mtg/mumu
+
+
+## TISMIR Experiments (Single-label Classification)
+
+Oramas S., Barbieri F., Nieto O. & Serra X. (2017) Multimodal Deep Learning for Music Genre Classification. TISMIR.
+
+To reproduce the experiments in the multimodal classification journal paper, you have to download the MSD-I dataset and untar it.
+
+This dataset contains the item-class matrices, data splits, and learned feature embeddings.
+
+[https://doi.org/10.5281/zenodo.831189](https://doi.org/10.5281/zenodo.831189)
+
+Untar it and point DATA_DIR in common.py to the full path of the msdi-data/ folder
+
+Then you can run the experiments by calling `run_experiments.py`, for example:
+
+
+Experiments:
+
+	python run_experiments.py single-label-vector audio
+	python run_experiments.py single-label-multimodal audio visual
+	python run_experiments.py single-label-multimodal audio mm-audio
+	python run_experiments.py single-label-all audio visual mm-audio mm-visual
+
+
+Full dataset and description: 
+	https://www.upf.edu/en/web/mtg/msdi

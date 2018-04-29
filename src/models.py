@@ -645,6 +645,49 @@ def get_model_33(params):
 
     return model
 
+
+# Metadata 4 inputs, pre-merge and l2
+def get_model_34(params):
+
+    # metadata
+    inputs = Input(shape=(params["n_metafeatures"],))
+    reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x1 = reg(inputs)
+
+    inputs2 = Input(shape=(params["n_metafeatures2"],))
+    reg2 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x2 = reg2(inputs2)
+
+    inputs3 = Input(shape=(params["n_metafeatures3"],))
+    reg3 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x3 = reg3(inputs3)
+
+    inputs4 = Input(shape=(params["n_metafeatures4"],))
+    reg4 = Lambda(lambda x :K.l2_normalize(x, axis=1))
+    x4 = reg4(inputs4)
+
+    # merge
+    x = merge([x1, x2, x3, x4], mode='concat', concat_axis=1)
+
+    x = Dropout(params["dropout_factor"])(x)
+
+    if params['n_dense'] > 0:
+        dense2 = Dense(output_dim=params["n_dense"], init="uniform", activation='relu')
+        x = dense2(x)
+        logging.debug("Output CNN: %s" % str(dense2.output_shape))
+
+    dense4 = Dense(output_dim=params["n_out"], init="uniform", activation=params['final_activation'])
+    xout = dense4(x)
+    logging.debug("Output CNN: %s" % str(dense4.output_shape))
+
+    if params['final_activation'] == 'linear':
+        reg = Lambda(lambda x :K.l2_normalize(x, axis=1))
+        xout = reg(xout)
+
+    model = Model(input=[inputs,inputs2,inputs3,inputs4], output=xout)
+
+    return model
+
 params_w2v = {
     # dataset params
     'dataset' : {

@@ -402,7 +402,7 @@ def do_eval(model_id, get_roc=False, get_map=False, get_p=False, start_user=0, n
         model_settings["loss"] = model_training['loss_func']
     if predictions==[]:
         predictions=np.load(common.PREDICTIONS_DIR+'/pred_%s.npy' % (model_id))
-        predictions_index=open(common.FACTORS_DIR+'/index_pred_%s.tsv' % (model_id)).read().splitlines()
+        predictions_index=open(common.PREDICTIONS_DIR+'/index_pred_%s.tsv' % (model_id)).read().splitlines()
 
     binary_classification = False
     if model_settings["evaluation"] == "binary":

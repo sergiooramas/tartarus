@@ -264,6 +264,18 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
             else:
                 all_X_meta3 = load_sparse_csr(common.TRAINDATA_DIR+'/X_%s_%s_%s.npz' % (set_name,metadata_source3,dataset_name)).toarray()
 
+        if 'meta-suffix4' in params:
+            metadata_source4 = params['meta-suffix4']
+            if 'w2v' in metadata_source4:
+                sequence_length = eval(model_config["model_arch"][0])["sequence_length"]
+                all_X_meta4 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source4,dataset_name))[:,:int(sequence_length)]
+            elif 'model' in metadata_source or not params['sparse']:
+                all_X_meta4 = np.load(common.TRAINDATA_DIR+'/X_%s_%s_%s.npy' % (set_name,metadata_source4,dataset_name))
+                print ("meta4",all_X_meta4.shape)
+                print (metadata_source4)
+            else:
+                all_X_meta4 = load_sparse_csr(common.TRAINDATA_DIR+'/X_%s_%s_%s.npz' % (set_name,metadata_source4,dataset_name)).toarray()
+
         index_meta = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
         index_meta_inv = dict()
         for i,item in enumerate(index_meta):
@@ -288,7 +300,10 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
         block_step = 1000
         N_train = all_X_meta.shape[0]
         for i in range(0,N_train,block_step):
-            if 'meta-suffix3' in params:
+            if 'meta-suffix4' in params:
+                x_block = [all_X_meta[i:min(N_train,i+block_step)],all_X_meta2[i:min(N_train,i+block_step)],all_X_meta3[i:min(N_train,i+block_step)],all_X_meta4[i:min(N_train,i+block_step)]]
+                print(len(x_block))
+            elif 'meta-suffix3' in params:
                 x_block = [all_X_meta[i:min(N_train,i+block_step)],all_X_meta2[i:min(N_train,i+block_step)],all_X_meta3[i:min(N_train,i+block_step)]]
                 print(len(x_block))
             elif 'meta-suffix2' in params:
