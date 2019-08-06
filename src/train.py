@@ -398,7 +398,7 @@ def process(params,with_predict=True,with_eval=True):
                   batch_size=config.training_params["n_minibatch"],
                   #shuffle='batch',
                   nb_epoch=config.training_params["n_epochs"],
-                  verbose=2, validation_data=(X_val, Y_val),
+                  verbose=1, validation_data=(X_val, Y_val),
                   callbacks=[early_stopping])
     else:
         if with_generator:
@@ -406,7 +406,7 @@ def process(params,with_predict=True,with_eval=True):
             epochs = model.fit_generator(batch_block_generator(params,config.y_path,N_train,id2gt,X_meta,config.training_params["val_from_file"]),
                         samples_per_epoch = N_train-(N_train % config.training_params["n_minibatch"]),
                         nb_epoch = config.training_params["n_epochs"],
-                        verbose=2,
+                        verbose=1,
                         validation_data = (X_val, Y_val),
                         callbacks=[early_stopping])
         else:
@@ -414,7 +414,7 @@ def process(params,with_predict=True,with_eval=True):
                       batch_size=config.training_params["n_minibatch"],
                       shuffle='batch',
                       nb_epoch=config.training_params["n_epochs"],
-                      verbose=2,
+                      verbose=1,
                       validation_data=(X_val, Y_val),
                       callbacks=[early_stopping])
 
@@ -439,11 +439,11 @@ def process(params,with_predict=True,with_eval=True):
     if params["dataset"]["fact"] == 'class':
         good_classes = np.nonzero(Y_test.sum(0))[0]
         print(Y_test.shape,preds.shape)
-        roc_auc=roc_auc_score(Y_test[:,good_classes],preds[:,good_classes])
-        logging.debug('ROC-AUC '+str(roc_auc))
-        pr_auc = average_precision_score(Y_test[:,good_classes],preds[:,good_classes])
-        print('PR-AUC',pr_auc)
-        r2 = roc_auc
+        #roc_auc=roc_auc_score(Y_test[:,good_classes],preds[:,good_classes])
+        #logging.debug('ROC-AUC '+str(roc_auc))
+        #pr_auc = average_precision_score(Y_test[:,good_classes],preds[:,good_classes])
+        #print('PR-AUC',pr_auc)
+        #r2 = roc_auc
     elif params["dataset"]["evaluation"] not in ['binary','multiclass','multilabel']:
         r2s = []
         for i,pred in enumerate(preds):

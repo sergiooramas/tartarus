@@ -209,14 +209,13 @@ def predict_track_metadata(model, metadata=[], output_layer=-1):
         print('Error predicting track')
     return pred[0]
 
-def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, pred_dataset=""):
+def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=False, spectro_folder="", with_metadata=False, only_metadata=False, metadata_source='rovi', set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, pred_dataset="",data_file="", data_index=""):
     """Evaluates the model across the whole dataset."""
     # Read the pre-trained model
     agg_method="mean"
     print(model_id)
     if not model:
         model = read_model(model_config)
-
     predictions = dict()
     params = eval(model_config["dataset_settings"][0])
     predictions=[]
@@ -282,7 +281,10 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
             index_meta_inv[item] = i
 
     if with_patches:
-        hdf5_file = common.PATCHES_DIR+"/patches_%s_%s_%sx%s.hdf5" % (set_name,dataset_name,params["npatches"],params["window"])
+        if data_file != "":
+            hdf5_file = common.PATCHES_DIR+"/%s" % (data_file)
+        else:
+            hdf5_file = common.PATCHES_DIR+"/patches_%s_%s_%sx%s.hdf5" % (set_name,dataset_name,params["npatches"],params["window"])
         f = h5py.File(hdf5_file,"r")
         block_step = 100
         N_train = f['features'].shape[0]
@@ -295,7 +297,10 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
                 preds = get_activations(model, output_layer, x_block)[0]
             predictions.extend([prediction for prediction in preds])
             print(i)
-        predictions_index = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
+        if data_index != "":
+            predictions_index = open(common.DATASETS_DIR+'/%s' % (data_index)).read().splitlines()
+        else:
+            predictions_index = open(common.DATASETS_DIR+'/items_index_%s_%s.tsv' % (set_name,dataset_name)).read().splitlines()
     elif only_metadata:
         block_step = 1000
         N_train = all_X_meta.shape[0]
@@ -332,7 +337,7 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
             if pred != []:
                 predictions.append(pred)
                 predictions_index.append(track_uid)
-            if i%100==0:
+            if i%10000==0:
                 print(i)
     suffix = ''        
     #if rnd_selection:
@@ -357,12 +362,17 @@ def obtain_predictions(model_config, dataset, model_id, trim_coeff=0.15, model=F
             fw=open(common.PREDICTIONS_DIR+'/index_pred_%s%s.tsv' % (model_id,suffix),'w')
             fw.write('\n'.join(predictions_index))
             fw.close()
+        elif "test" in set_name:
+            if not os.path.isdir(common.PREDICTIONS_DIR):
+                os.makedirs(common.PREDICTIONS_DIR)
+            np.save(common.PREDICTIONS_DIR+'/pred_%s_%s' % (model_id,set_name),predictions)
+
     print(len(predictions))
     print(len(predictions_index))
     return predictions, predictions_index
 
 
-def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file="", pred_dataset="", spectro_folder="", set_name="test", rnd_selection=False, output_layer=-1, with_patches=False):
+def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file="", pred_dataset="", spectro_folder="", set_name="test", rnd_selection=False, output_layer=-1, with_patches=False, data_file="", data_index=""):
     """Main process to perform the training.
 
     Parameters
@@ -398,10 +408,14 @@ def predict(model_id, trained_tsv=common.DEFAULT_TRAINED_MODELS_FILE, test_file=
         dataset_tsv = common.DATASETS_DIR+'/%s' % test_file
 
     # Read dataset
-    f=open(dataset_tsv)
-    dataset = f.read().splitlines()
-    print(len(dataset))
-    predictions, predictions_index = obtain_predictions(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches, pred_dataset=pred_dataset)
+    if data_index == '':
+        f=open(dataset_tsv)
+        dataset = f.read().splitlines()
+        print(len(dataset))
+    else:
+        dataset = []
+
+    predictions, predictions_index = obtain_predictions(model_config, dataset, model_id, spectro_folder=spectro_folder, with_metadata=model_settings['with_metadata'], only_metadata=model_settings['only_metadata'], metadata_source=model_settings['meta-suffix'],set_name=set_name, rnd_selection=rnd_selection, output_layer=output_layer, with_patches=with_patches, pred_dataset=pred_dataset, data_file=data_file, data_index=data_index)
     print('Factors created')
 
 
@@ -460,6 +474,20 @@ if __name__ == "__main__":
                         help='Use h5py patches file for test',
                         default=False)
 
+    parser.add_argument('-df',
+                        '--data_file',
+                        dest="data_file",
+                        type=str,
+                        help='specific h5py data file',
+                        default='')
+
+    parser.add_argument('-di',
+                        '--data_index',
+                        dest="data_index",
+                        type=str,
+                        help='specific h5py data index file',
+                        default='')
+
     # Setup logger
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
@@ -468,7 +496,7 @@ if __name__ == "__main__":
 
     # Parse arguments and call main process
     args = parser.parse_args()
-    predict(args.model_id, args.trained_tsv, args.test_file, args.pred_dataset, args.spectro_folder, args.set_name, args.rnd_selection, args.output_layer, args.with_patches)
+    predict(args.model_id, args.trained_tsv, args.test_file, args.pred_dataset, args.spectro_folder, args.set_name, args.rnd_selection, args.output_layer, args.with_patches, args.data_file, args.data_index)
 
     # Finish
     logging.info("Done! Took %.2f seconds" % (time.time() - start_time))

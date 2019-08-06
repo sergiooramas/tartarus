@@ -22,7 +22,7 @@ def add_extra_params(params,extra_params):
             print t1,t2,params[t1][t2]
 
 def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix3='bow', meta_suffix4='bow', extra_params=''):
-    params = dict()
+    params = dict()  
 
     ###################################################################
     ### Dummy experiments on SUPER dataset, multiclass classification
@@ -139,6 +139,250 @@ def get_configuration(suffix, meta_suffix='bow', meta_suffix2='bow', meta_suffix
     add_extra_params(nparams, extra_params)
     params['dummy_multimodal'] = copy.deepcopy(nparams)
 
+    ################################################
+    ### ISMIR 2019 Experiments (Baseline for AcousticBrainz Genre Dataset Classification)
+    ################################################
+
+    # Features experiment with Allmusic
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = False
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["window"] = 1
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 766
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '6'
+    nparams["cnn"]["n_dense"] = 2048
+    nparams["cnn"]["n_dense_2"] = 1024
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams['cnn']['n_metafeatures'] = 2669
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'allmusic'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    add_extra_params(nparams, extra_params)
+    params['genres_allmusic'] = copy.deepcopy(nparams)
+
+    # Features experiment with Discogs
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = False
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["window"] = 1
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 315
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '3'
+    nparams["cnn"]["n_dense"] = 256
+    nparams["cnn"]["n_dense_2"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams['cnn']['n_metafeatures'] = 2669
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'discogs'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    add_extra_params(nparams, extra_params)
+    params['genres_discogs'] = copy.deepcopy(nparams)
+
+    # Features experiment with Last.fm
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = False
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["window"] = 1
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 327
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '3'
+    nparams["cnn"]["n_dense"] = 256
+    nparams["cnn"]["n_dense_2"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams['cnn']['n_metafeatures'] = 2669
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'lastfm'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    add_extra_params(nparams, extra_params)
+    params['genres_lastfm'] = copy.deepcopy(nparams)
+
+    # Features experiment with Tagtraum
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = False
+    nparams["dataset"]["only_metadata"] = False
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["dataset"]["window"] = 1
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 296
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '3'
+    nparams["cnn"]["n_dense"] = 256
+    nparams["cnn"]["n_dense_2"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams['cnn']['n_metafeatures'] = 2669
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'tagtraum'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    add_extra_params(nparams, extra_params)
+    params['genres_tagtraum'] = copy.deepcopy(nparams)    
+
+    # Multimodal experiment Discogs
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 315
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '34'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'discogs'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    nparams["dataset"]["meta-suffix4"] = meta_suffix4
+    add_extra_params(nparams, extra_params)
+    params['genres_discogs_multimodal'] = copy.deepcopy(nparams)    
+
+    # Multimodal experiment Allmusic
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 766
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '34'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'allmusic'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    nparams["dataset"]["meta-suffix4"] = meta_suffix4
+    add_extra_params(nparams, extra_params)
+    params['genres_allmusic_multimodal'] = copy.deepcopy(nparams)   
+
+    # Multimodal experiment Lastfm
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 327
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '34'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'lastfm'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    nparams["dataset"]["meta-suffix4"] = meta_suffix4
+    add_extra_params(nparams, extra_params)
+    params['genres_lastfm_multimodal'] = copy.deepcopy(nparams)   
+
+    # Multimodal experiment Tagtraum
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 296
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '34'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'tagtraum'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    nparams["dataset"]["meta-suffix2"] = meta_suffix2
+    nparams["dataset"]["meta-suffix3"] = meta_suffix3
+    nparams["dataset"]["meta-suffix4"] = meta_suffix4
+    add_extra_params(nparams, extra_params)
+    params['genres_tagtraum_multimodal'] = copy.deepcopy(nparams)   
+
+    # Singlemodal experiment Allmusic with feature vector
+    nparams = copy.deepcopy(models.params_1)
+    nparams["dataset"]["evaluation"] = 'multilabel' # binary/multilabel/multiclass/recommendation
+    nparams["dataset"]["fact"] = 'class'
+    nparams["dataset"]["npatches"] = 1
+    nparams["dataset"]["with_metadata"] = True
+    nparams["dataset"]["only_metadata"] = True
+    nparams["dataset"]["configuration"] = suffix
+    nparams["dataset"]["sparse"] = False
+    nparams["training"]["val_from_file"] = True
+    nparams["dataset"]["dim"] = 315
+    nparams["training"]["loss_func"] = 'binary_crossentropy'
+    nparams["training"]["optimizer"] = 'adam'
+    nparams["training"]["normalize_y"] = False
+    nparams["cnn"]["architecture"] = '3'
+    nparams["cnn"]["n_dense"] = 0
+    nparams["cnn"]["n_dense_2"] = 0
+    nparams["cnn"]["dropout_factor"] = 0.5
+    nparams["cnn"]["final_activation"] = 'sigmoid'
+    nparams["dataset"]["nsamples"] = 'all'
+    nparams["dataset"]["dataset"] = 'discogs'
+    nparams["dataset"]["meta-suffix"] = meta_suffix
+    add_extra_params(nparams, extra_params)
+    params['genres_discogs_singlemodal'] = copy.deepcopy(nparams)  
 
     ################################################
     ### DLRS 2017 Experiments (Recommendation)
