@@ -29,7 +29,7 @@ pandas==0.22.0
 pyparsing==2.2.0
 python-dateutil==2.7.2
 pytz==2018.4
-PyYAML==3.12
+PyYAML==5.4
 requests==2.18.4
 resampy==0.2.0
 s3transfer==0.1.13
