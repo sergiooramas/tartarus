@@ -41,4 +41,4 @@ sklearn==0.0
 smart-open==1.5.7
 subprocess32==3.2.7
 Theano==1.0.1
-urllib3==1.22
+urllib3==1.24.2
