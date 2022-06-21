@@ -24,7 +24,7 @@ llvmlite==0.22.0
 matplotlib==2.2.2
 nltk==3.4.5
 numba==0.37.0
-numpy==1.14.2
+numpy==1.22.0
 pandas==0.22.0
 pyparsing==2.2.0
 python-dateutil==2.7.2
